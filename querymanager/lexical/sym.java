@@ -90,4 +90,6 @@ public class sym {
 	public static final int EOF = 84;
 	public static final int ID = 85;
 	public static final int DOUBLE = 86;
+	public static final int ASC = 87;
+	public static final int DESC = 88;
 }
