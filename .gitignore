@@ -1,1 +1,7 @@
 querymanager/lexical/DBLex
+*.class
+.classpath
+.project
+META-INF
+*.jar
+.DS_Store
