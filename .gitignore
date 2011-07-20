@@ -1,2 +1,8 @@
 querymanager/lexical/DBLex
 querymanager/syntax/DBParse
+*.class
+.classpath
+.project
+META-INF
+*.jar
+.DS_Store
