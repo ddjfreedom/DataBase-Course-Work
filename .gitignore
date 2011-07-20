@@ -1,5 +1,3 @@
-querymanager/lexical/DBLex
-querymanager/syntax/DBParse
 *.class
 .classpath
 .project
