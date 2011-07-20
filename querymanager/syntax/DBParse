@@ -1,0 +1,105 @@
+parser code {:
+	ErrorMsg.ErrorMsg errorMsg;
+	public DBParser(java_cup.runtime.Scanner s, ErrorMsg.ErrorMsg errorMsg){
+		super(s);
+		this.errorMsg = errorMsg;
+	}
+:}
+scan with {:return getScanner().next_token();:};
+
+terminal	CREATE, UPDATE, ALTER, INSERT, UNIQUE, DELETE, SELECT, DROP, INDEX, CHECK, TRIGGER;
+terminal	ASSERT, TABLE, DATABASE, VALUES, INTO, FROM, DISTINCT, LIKE, IN, VIEW, BETWEEN, COUNT;
+terminal	GROUP, HAVING, BY, ORDER, SET, SUM, AVG, WHERE, MAX, MIN, ESCAPE, PRIMARY, KEY;
+terminal	REFERENCE, JOIN, NOT, NULL, AS, ON, ALL, INTERSECT, EXCEPT, UNION, NATURAL, FULL, SCHEMA;
+terminal	OUTER, INNER, IS, CHAR, DATE, INT, CARCHAR, CASCADE, UNKNOWN, TRUE, FALSE, CROSS, TIME;
+terminal	ANY, CONNECT, EXISTS, ASC, DESC;
+terminal	COMMA, COLON, SEMICOLON, LPAREN, RPAREN, DOT, PLUS, MINUS, STAR, DEVIDE, EQ, NEQ, LT, LE, GT, GE, AND, OR;
+terminal Integer	NUMBER;
+terminal Double		DOUBLE;
+terminal String	STRING, ID;
+
+nonterminal instruction, queryExp, selFrom, optional,attributeList, relationList, conditionList;
+nonterminal condition, attribute, relation, tuple, pattern;
+nonterminal updateExp, createExp, insertExp, deleteExp, alterExp;
+nonterminal distinctOrAll, nickName, columnID, fieldID;
+nonterminal mathExp, mathArg, aggrAttribute, aggregationOp;
+nonterminal optionalList, whereList, compareExp, compareOp;
+nonterminal anyOrAll, rangeExp, isNot, comparable, inOrNotExp, valueList, value, likeExp;
+nonterminal nullExp, notExistExp, groupByList, havingCondition, orderByList, ascOrDesc;
+
+
+precedence left SEMICOLON;
+precedence left COMMA;
+precedence left EXCEPT, UNION, INTERSECT;
+precedence left OR;
+precedence left AND;
+precedence left EQ, NEQ;
+precedence nonassoc LT, LE, GT, GE;
+precedence left PLUS, MINUS;
+precedence left STAR, DEVIDE;
+precedence left DOT;
+
+start with instruction;
+
+instruction ::= queryExp | updateExp | createExp | insertExp | deleteExp | alterExp;
+
+queryExp ::= selFrom optionalList | LPAREN queryExp RPAREN | queryExp EXCEPT queryExp
+			| queryExp UNION queryExp | queryExp INTERSECT queryExp;
+
+selFrom ::= SELECT distinctOrAll attributeList FROM relationList;
+
+distinctOrAll ::= DISTINCT | ALL | ;
+
+attributeList ::= attribute nickName| attribute nickName COMMA attributeList;
+
+nickName ::= ID | AS ID |;
+
+attribute ::= columnID | mathExp | STRING | aggrAttribute;
+
+columnID ::= fieldID | STAR | ID DOT STAR;
+
+fieldID ::= ID | ID DOT ID;
+
+mathExp ::= mathArg PLUS mathArg | mathArg MINUS mathArg | mathArg STAR mathArg 
+			| mathArg DEVIDE mathArg;
+mathArg ::= fieldID | NUMBER | DOUBLE;
+
+aggrAttribute ::= aggregationOp LPAREN distinctOrAll columnID RPAREN;
+aggregationOp ::= COUNT | SUM | AVG | MIN | MAX;
+
+relationList ::= relation | relation COMMA relationList;
+
+relation ::= ID | ID ID |  LPAREN queryExp RPAREN | LPAREN queryExp RPAREN ID;
+
+optionalList ::=  whereList groupByList orderByList;//
+
+whereList ::= WHERE conditionList | ;
+
+conditionList ::= condition | condition AND conditionList | conditionList OR conditionList;
+
+condition ::= compareExp | rangeExp | inOrNotExp | likeExp | nullExp | notExistExp;
+
+compareExp ::= fieldID compareOp fieldID | fieldID compareOp NUMBER | fieldID compareOp STRING
+				| ANY queryExp | ALL queryExp | queryExp; 
+compareOp ::= EQ | NEQ | LT | LE | GT | GE;
+
+
+rangeExp ::= fieldID isNot BETWEEN comparable AND comparable; 
+isNot ::= NOT | ;
+comparable ::= fieldID | NUMBER | STRING | queryExp;
+
+inOrNotExp ::= fieldID isNot IN LPAREN valueList RPAREN | fieldID isNot IN queryExp;
+valueList ::= value | value COMMA valueList;
+value ::= NUMBER | STRING;
+
+likeExp ::= fieldID isNot LIKE STRING;
+
+nullExp ::= fieldID IS isNot NULL; 
+
+notExistExp ::= isNot EXISTS queryExp;
+
+groupByList ::= GROUP BY fieldID havingCondition | ;
+havingCondition ::= HAVING conditionList | ;
+
+orderByList ::= ORDER BY fieldID ascOrDesc | ;
+ascOrDesc ::= ASC | DESC | ;
