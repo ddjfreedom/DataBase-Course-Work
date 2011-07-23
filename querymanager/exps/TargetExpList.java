@@ -5,11 +5,11 @@ package querymanager.exps;
  * and stands before 'where' in the select sql expression
  */
 public class TargetExpList extends Exp {
-	TargetExp currnetTarget;
+	TargetExp head;
 	TargetExpList tail;
 	
 	public TargetExpList(TargetExp target, TargetExpList tail){
-		this.currnetTarget = target;
+		this.head = target;
 		this.tail = tail;
 	}
 	

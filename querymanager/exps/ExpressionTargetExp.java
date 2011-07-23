@@ -11,7 +11,8 @@ public class ExpressionTargetExp extends TargetExp {
 	TargetExp operand1;
 	TargetExp operand2;
 	
-	public ExpressionTargetExp(String listName,MathOp mathOp, TargetExp operand1, TargetExp operand2){
+	public ExpressionTargetExp(String listName,MathOp mathOp, TargetExp operand1, TargetExp operand2, String alias){
+		super(alias);
 		this.listName = listName;
 		this.mathOp = mathOp;
 		this.operand1 = operand1;
