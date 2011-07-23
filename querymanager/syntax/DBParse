@@ -80,7 +80,7 @@ conditionList ::= condition | condition AND conditionList | conditionList OR con
 condition ::= compareExp | rangeExp | inOrNotExp | likeExp | nullExp | notExistExp;
 
 compareExp ::= fieldID compareOp fieldID | fieldID compareOp NUMBER | fieldID compareOp STRING
-				| ANY queryExp | ALL queryExp | queryExp; 
+				| fieldID compareOp ANY queryExp |fieldID compareOp ALL queryExp | fieldID compareOp queryExp; 
 compareOp ::= EQ | NEQ | LT | LE | GT | GE;
 
 

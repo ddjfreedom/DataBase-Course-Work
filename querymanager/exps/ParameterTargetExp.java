@@ -6,11 +6,9 @@ package querymanager.exps;
  *     A.a
  */
 public class ParameterTargetExp extends TargetExp {
-	String listName;
-	String parameter;
-	public ParameterTargetExp(String listName, String parameter, String alias){
+	ParameterExp parameter;
+	public ParameterTargetExp(ParameterExp parameter, String alias){
 		super(alias);
-		this.listName = listName;
 		this.parameter = parameter;
 	}
 }

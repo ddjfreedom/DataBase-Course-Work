@@ -20,4 +20,16 @@ public abstract class Exp {
 		TIMES,
 		DIVIDE
 	}
+	static enum CompareOp{
+		EQ,
+		NEQ,
+		LT,
+		LE,
+		GT,
+		GE
+	}
+	static enum AnyOrAll{
+		ANY,
+		ALL
+	}
 }
