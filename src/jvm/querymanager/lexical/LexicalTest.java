@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public class LexicalTest {
 	public static void main(String [] args){
-		String fileName = "test";
+		String fileName = args[0];
 		ErrorMsg.ErrorMsg errorMsg = new ErrorMsg.ErrorMsg(fileName);
 	      java.io.InputStream inp = null;
 		try {

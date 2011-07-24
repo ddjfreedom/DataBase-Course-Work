@@ -4,3 +4,11 @@
 META-INF
 *.jar
 .DS_Store
+*~
+lib/
+pom.xml
+.cake/
+src/jvm/querymanager/lexical/DBLex.java
+src/jvm/querymanager/syntax/DBParser.java
+src/jvm/querymanager/syntax/sym.java
+classes/
