@@ -1,4 +1,4 @@
-package querymanager.exps;
+package jvm.querymanager.exps;
 
 public class AnyAllCompareCompareConditionExp extends CompareConditionExp {
 	ParameterExp operand1;

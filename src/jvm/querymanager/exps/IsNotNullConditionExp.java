@@ -1,11 +1,11 @@
-package querymanager.exps;
+package jvm.querymanager.exps;
 
 public class IsNotNullConditionExp extends ConditionExp {
 	ParameterExp parameter;
-	boolean not;
+	boolean isNot;
 	
-	public IsNotNullConditionExp(ParameterExp parameter, boolean not){
+	public IsNotNullConditionExp(ParameterExp parameter, boolean isNot){
 		this.parameter = parameter;
-		this.not = not;
+		this.isNot = isNot;
 	}
 }

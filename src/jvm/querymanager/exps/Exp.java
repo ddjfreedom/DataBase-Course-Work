@@ -1,9 +1,9 @@
-package querymanager.exps;
+package jvm.querymanager.exps;
 
 public abstract class Exp {
 	abstract Result execute();
 	static enum DisOrAll{
-		DISTICNT,
+		DISTINCT,
 		ALL
 	}
 	static enum Aggregation{
@@ -31,5 +31,9 @@ public abstract class Exp {
 	static enum AnyOrAll{
 		ANY,
 		ALL
+	}
+	static enum AscOrDesc{
+		ASC,
+		DESC
 	}
 }

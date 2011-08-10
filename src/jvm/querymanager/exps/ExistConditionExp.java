@@ -1,11 +1,11 @@
-package querymanager.exps;
+package jvm.querymanager.exps;
 
 public class ExistConditionExp extends ConditionExp {
-	boolean not;
+	boolean isNot;
 	QueryExp query;
 	
-	public ExistConditionExp(boolean not, QueryExp query){
-		this.not = not;
+	public ExistConditionExp(boolean isNot, QueryExp query){
+		this.isNot = isNot;
 		this.query = query;
 	}
 }

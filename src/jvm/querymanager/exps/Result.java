@@ -1,4 +1,4 @@
-package querymanager.exps;
+package jvm.querymanager.exps;
 
 /*
  * super class of all the result type

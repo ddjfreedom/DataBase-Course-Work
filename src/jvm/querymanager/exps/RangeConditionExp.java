@@ -1,10 +1,11 @@
-package querymanager.exps;
+package jvm.querymanager.exps;
 
 public class RangeConditionExp extends Exp {
 	ParameterExp parameter;
-	
-	public RangeConditionExp(ParameterExp parameter){
+	boolean isNot;
+	public RangeConditionExp(ParameterExp parameter, boolean isNot){
 		this.parameter = parameter;
+		this.isNot = isNot;
 	}
 	
 	@Override

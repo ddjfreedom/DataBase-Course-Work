@@ -1,4 +1,4 @@
-package querymanager.exps;
+package jvm.querymanager.exps;
 
 /*
  * Expression Target
@@ -6,16 +6,9 @@ package querymanager.exps;
  * 	   c + AVG(B)
  */
 public class ExpressionTargetExp extends TargetExp {
-	String listName;
-	MathOp mathOp;
-	TargetExp operand1;
-	TargetExp operand2;
-	
-	public ExpressionTargetExp(String listName,MathOp mathOp, TargetExp operand1, TargetExp operand2, String alias){
+	MathExp mathExp;
+	public ExpressionTargetExp(MathExp mathExp, String alias){
 		super(alias);
-		this.listName = listName;
-		this.mathOp = mathOp;
-		this.operand1 = operand1;
-		this.operand2 = operand2;
+		this.mathExp = mathExp;
 	}
 }

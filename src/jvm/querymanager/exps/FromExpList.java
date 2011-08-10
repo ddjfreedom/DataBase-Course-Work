@@ -1,4 +1,4 @@
-package querymanager.exps;
+package jvm.querymanager.exps;
 
 public class FromExpList extends Exp {
 	FromExp head;

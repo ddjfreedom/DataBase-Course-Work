@@ -1,13 +1,13 @@
-package querymanager.exps;
+package jvm.querymanager.exps;
 
 public class LikeConditionExp extends ConditionExp {
 	ParameterExp parameter;
-	boolean not;
+	boolean isNot;
 	MatchPattern pattern;
 	
-	public LikeConditionExp(ParameterExp parameter, boolean not, MatchPattern pattern){
+	public LikeConditionExp(ParameterExp parameter, MatchPattern pattern, boolean isNot){
 		this.parameter = parameter;
-		this.not = not;
+		this.isNot = isNot;
 		this.pattern = pattern;
 	}
 }
