@@ -1,0 +1,210 @@
+parser code {:
+	ErrorMsg.ErrorMsg errorMsg;
+	public DBParser(java_cup.runtime.Scanner s, ErrorMsg.ErrorMsg errorMsg){
+		super(s);
+		this.errorMsg = errorMsg;
+	}
+:}
+scan with {:return getScanner().next_token();:};
+
+terminal	CREATE, UPDATE, ALTER, INSERT, UNIQUE, DELETE, SELECT, DROP, INDEX, CHECK, TRIGGER;
+terminal	ASSERT, TABLE, DATABASE, VALUES, INTO, FROM, DISTINCT, LIKE, IN, VIEW, BETWEEN, COUNT;
+terminal	GROUP, HAVING, BY, ORDER, SET, SUM, AVG, WHERE, MAX, MIN, ESCAPE, PRIMARY, KEY;
+terminal	REFERENCE, JOIN, NOT, NULL, AS, ON, ALL, INTERSECT, EXCEPT, UNION, NATURAL, FULL, SCHEMA;
+terminal	OUTER, INNER, IS, CHAR, DATE, INT, CARCHAR, CASCADE, UNKNOWN, TRUE, FALSE, CROSS, TIME;
+terminal	ANY, CONNECT, EXISTS, ASC, DESC;
+terminal	COMMA, COLON, SEMICOLON, LPAREN, RPAREN, DOT, PLUS, MINUS, STAR, DEVIDE, EQ, NEQ, LT, LE, GT, GE, AND, OR;
+terminal Integer	NUMBER;
+terminal Double		DOUBLE;
+terminal String	STRING, ID;
+
+nonterminal Exp instruction;
+nonterminal QueryExp queryExp;
+nonterminal SelectFromExp selFrom;
+nonterminal TargetExpList attributeList;
+nonterminal FromExpList relationList;
+nonterminal ConditionExpList conditionList;
+nonterminal ConditionExpLists conditionLists;
+nonterminal ConditionExp condition;
+nonterminal TargetExp attribute;
+nonterminal FromExp relation;
+nonterminal updateExp, createExp, insertExp, deleteExp, alterExp;
+nonterminal DisOrAll distinctOrAll;
+nonterminal String nickName;
+nonterminal ParameterExp columnID, fieldID;
+nonterminal MathExp mathExp;
+nonterminal AggregationExp aggrAttribute;
+nonterminal AggregationOp aggregationOp;
+nonterminal OptionalExp optionalList;
+nonterminal WhereExp whereList;
+nonterminal CompareConditionExp compareExp;
+nonterminal CompareOp compareOp;
+nonterminal AnyOrAll anyOrAll;
+nonterminal RangeConditionExp rangeExp;
+nonterminal InOrNotConditionExp inOrNotExp;
+nonterminal ConstantList valueList;
+nonterminal LikeConditionExp likeExp;
+nonterminal IsNotNullConditionExp nullExp;
+nonterminal ExistConditionExp notExistExp;
+nonterminal GroupExp groupByList;
+nonterminal OrderExp orderByList;
+nonterminal AscOeDesc ascOrDesc;
+
+
+precedence left SEMICOLON;
+precedence left COMMA;
+precedence left EXCEPT, UNION, INTERSECT;
+precedence left OR;
+precedence left AND;
+precedence left EQ, NEQ;
+precedence nonassoc LT, LE, GT, GE;
+precedence left PLUS, MINUS;
+precedence left STAR, DEVIDE;
+precedence left DOT;
+
+start with instruction;
+
+instruction ::= queryExp:q {:RESULT = q;:} 
+				| updateExp | createExp | insertExp | deleteExp | alterExp;
+
+queryExp ::= selFrom:sf optionalList:op {:RESULT = new QueryExp(sf, op);:} 
+				| LPAREN queryExp:qe RPAREN {:RESULT = qe;:} 
+				| queryExp:q1 EXCEPT queryExp:q2 {:RESULT = new SetQueryExp(q1, q2, SetQueryExp.EXCEPT);:}
+				| queryExp:q1 UNION queryExp:q2 {:RESULT = new SetQueryExp(q1, q2, SetQueryExp.UNION);:}
+				| queryExp:q1 INTERSECT queryExp:q2 {:RESULT = new SetQueryExp(q1, q2, SetQueryExp.INTERSECT);:}
+				;
+selFrom ::= SELECT distinctOrAll:d attributeList:at FROM relationList:re
+			{:RESULT = new SelectFromExp(d, at, re);:}
+			;
+
+distinctOrAll ::= DISTINCT {:RESULT = DisOrAll.DISTINCT;:} 
+				| ALL {:RESULT = DisOrAll.ALL;:} 
+				|
+				;
+
+attributeList ::= attribute:a {:RESULT = new TargetExpList(a, null);:}
+				| attribute:a COMMA attributeList:al {:RESULT = new TargetExpList(a, al);:}
+				;
+nickName ::= ID:i {:RESULT = i;:}
+				| AS ID:i {:RESULT = i;:} 
+				|;
+
+attribute ::= columnID:c nickName:n {:RESULT = new ParameterTargetExp(c, n);:}
+				| mathExp:m nickName:n {:RESULT = new ExpressionTargetExp(m, n);:}
+				| aggrAttribute:a nickName:n {:RESULT = new AggregationTargetExp(a, n);:}
+				;
+
+columnID ::= fieldID:f {:RESULT = f:} 
+				| STAR {:RESULT = new ParameterExp(null, ParameterExp.STAR);:} 
+				| ID:i DOT STAR {:RESULT = new ParameterExp(i, ParameterExp.STAR);:}
+				;
+
+fieldID ::= ID:i {:RESULT = new ParameterExp(null, i);:}
+				| ID:i1 DOT ID:i2 {:RESULT = new ParameterExp(i1, i2);:}
+				;
+
+mathExp ::= attribute:a1 PLUS attribute:a2 {:RESULT = new MathExp(a1, a2, MathOp.PLUS);:} 
+				| attribute:a1 MINUS attribute:a2 {:RESULT = new MathExp(a1, a2, MathOp.MINUS);:}
+				| attribute:a1 STAR attribute:a2 {:RESULT = new MathExp(a1, a2, MathOp.TIMES);:}
+				| attribute:a1 DEVIDE attribute:a2 {:RESULT = new MathExp(a1, a2, MathOp.DEVIDE);:}
+				;
+
+aggrAttribute ::= aggregationOp:ao LPAREN distinctOrAll:d columnID:c RPAREN
+				{:new AggregationExp(ao, d, c);:}
+				;
+aggregationOp ::= COUNT {:RESULT = Aggregation.COUNT;:}
+				| SUM {:RESULT = Aggregation.SUM;:} 
+				| AVG {:RESULT = Aggregation.AVG;:}
+				| MIN {:RESULT = Aggregation.MIN;:}
+				| MAX {:RESULT = Aggregation.MAX;:}
+				;
+
+relationList ::= relation:r {:RESULT = new FromExpList(r, null);:}
+				| relation:r COMMA relationList:rl {:RESULT = new FromExpList(r, rl);:}
+				;
+
+relation ::= ID:i {:RESULT = new FromExp(i, null, null);:}
+				| ID:i1 ID:i2 {:RESULT = new FromExp(i1, i2, null);:}
+				|  LPAREN queryExp:q RPAREN {:RESULT = new FromExp(null, null, q);:}
+				| LPAREN queryExp:q RPAREN ID:i {:RESULT = new FromExp(null, i, q);:}
+				;
+
+optionalList ::=  whereList:w groupByList:g orderByList:o
+				{:RESULT = new OptionalExp(w,g,o);:}
+				;
+
+whereList ::= WHERE conditionLists:cls {:RESULT = new WhereExp(cls);:}
+				| ;
+				
+conditionLists ::= conditionList:cl {:RESULT = new ConditionExpLists(cl, null);:}
+				| conditionList:cl OR conditionLists:cls {:RESULT = new ConditionExpLists(cl,cls);:}
+				;
+
+conditionList ::= condition:c {:RESULT = new ConditionExpList(c,null);:} 
+				| condition:c AND conditionList:cl {:RESULT = new ConditionExpList(c, cl);:}
+				;
+
+condition ::= compareExp:c {:RESULT = c;:} 
+				| rangeExp:r {:RESULT = r;:} 
+				| inOrNotExp:i {:RESULT = i;:}
+				| likeExp:l {:RESULT = l;:}
+				| nullExp:n {:RESULT = n;:}
+				| notExistExp:n {:RESULT = n;:}
+				;
+
+compareExp ::= fieldID:f1 compareOp:c fieldID:f2 {:RESULT = new ParameterCompareConditionExp(f1,c,f2);:} 
+				| fieldID:f compareOp:c NUMBER:n {:RESULT = new ConstantCompareConditionExp(f,c,new Constant(n));:}
+				| fieldID:f compareOp:c STRING:s {:RESULT = new ConstantCompareConditionExp(f,c,new Constant(s));:}
+				| fieldID:f compareOp:c ANY queryExp:q {:RESULT = new QueryCompareCondition(f,c,q,AnyOrAll.ANY);:}
+				| fieldID:f compareOp:c ALL queryExp:q {:RESULT = new QueryCompareCondition(f,c,q,AnyOrAll.ALL);:} 
+				| fieldID:f compareOp:c queryExp:q {:RESULT = new QueryCompareCondition(f,c,q,null);:}
+				; 
+compareOp ::= EQ {:RESULT = CompareOp.EQ;:} 
+				| NEQ {:RESULT = CompareOp.NEQ;:}
+				| LT {:RESULT = CompareOp.LT;:}
+				| LE {:RESULT = CompareOp.LE;:}
+				| GT {:RESULT = CompareOp.GT;:}
+				| GE {:RESULT = CompareOp.GE;:}
+				;
+
+rangeExp ::= fieldID:f1 BETWEEN fieldID:f2 AND fieldID:f3 {:RESULT = new ParameterRangeConditionExp(f1,f2,f3,false);:}
+				| fieldID:f BETWEEN NUMBER:n1 AND NUMBER:n2 {:RESULT = new ConstantRangeConditionExp(f,new Constant(n1), new Constant(n2), false);:}
+				| fieldID:f BETWEEN STRING:s1 AND STRING:s2  {:RESULT = new ConstantRangeConditionExp(f,new Constant(s1), new Constant(s2), false);:}
+				| fieldID:f BETWEEN queryExp:q1 AND queryExp:q2 {:RESULT = new QueryRangeConditionExp(f, q1, q2, false);:}
+				| fieldID:f1 NOT BETWEEN fieldID:f2 AND fieldID:f3 {:RESULT = new ParameterRangeConditionExp(f1,f2,f3,true);:}
+				| fieldID:f NOT BETWEEN NUMBER:n1 AND NUMBER:n2 {:RESULT = new ConstantRangeConditionExp(f,new Constant(n1), new Constant(n2), true);:}
+				| fieldID:f NOT BETWEEN STRING:s1 AND STRING:s2  {:RESULT = new ConstantRangeConditionExp(f,new Constant(s1), new Constant(s2), true);:}
+				| fieldID:f NOT BETWEEN queryExp:q1 AND queryExp:q2 {:RESULT = new QueryRangeConditionExp(f, q1, q2, true);:}
+				;
+
+inOrNotExp ::= fieldID:f IN LPAREN valueList:vl RPAREN {:RESULT = new ValueListInOrNotConditionExp(f, vl, false);:}
+				| fieldID:f NOT IN LPAREN valueList:vl RPAREN {:RESULT = new ValueListInOrNotConditionExp(f, vl, true);:}
+				| fieldID:f IN queryExp:q {:RESULT = new QueryInOrNotConditionExp(f,q,false);:}
+				| fieldID:f NOT IN queryExp:q {:RESULT = new QueryInOrNotConditionExp(f,q,true);:}
+				;
+valueList ::= NUMBER:n {:RESULT = new ConstantList(new Constant(n), null);:}
+				| STRING:s {:RESULT = new ConstantList(new Constant(s), null);:} 
+				| STRING:s COMMA valueList:vl {:RESULT = new ConstantList(new Constant(s), vl);:}
+				| NUMBER:n COMMA valueList:vl {:RESULT = new ConstantList(new Constant(n), vl);:}
+				;
+
+likeExp ::= fieldID:f LIKE STRING:s {:RESULT = new LikeConditionExp(f,new MatchPattern(s), false);:}
+  				| fieldID:f NOT LIKE STRING:s {:RESULT = new LikeConditionExp(f,new MatchPattern(s), true);:}
+				;
+
+nullExp ::= fieldID:f IS NULL {:RESULT = new IsNotNullConditionExp(f, false);:}
+				| fieldID:f IS NOT NULL {:RESULT = new IsNotNullConditionExp(f, true);:}
+				; 
+
+notExistExp ::= EXISTS queryExp:q {:RESULT = new ExistConditionExp(false, q);:}
+				| NOT EXISTS queryExp {:RESULT = new ExistConditionExp(true, q);:}
+				;
+
+groupByList ::= GROUP BY fieldID:f {:RESULT = new GroupExp(f, null);:} 
+				| GROUP BY fieldID:f HAVING conditionLists:cls {:RESULT = new GroupExp(f, cls);:}
+				|;
+
+orderByList ::= ORDER BY fieldID:f {:RESULT = new OrderExp(f, null);:}
+				| ORDER BY fieldID:f ASC {:RESULT = new OrderExp(f, AscOrDesc.ASC);:}
+				| ORDER BY fieldID:f DESC {:RESULT = new OrderExp(f, AscOrDesc.DESC);:}
+				| ;
