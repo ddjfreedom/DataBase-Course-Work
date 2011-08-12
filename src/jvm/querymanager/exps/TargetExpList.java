@@ -1,4 +1,4 @@
-package jvm.querymanager.exps;
+package querymanager.exps;
 
 /*
  * TargetExpList represents the part that follows the 'select'

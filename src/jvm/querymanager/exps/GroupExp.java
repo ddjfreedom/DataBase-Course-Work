@@ -1,4 +1,4 @@
-package jvm.querymanager.exps;
+package querymanager.exps;
 
 public class GroupExp extends Exp {
 	ParameterExp parameter;

@@ -1,4 +1,4 @@
-package jvm.querymanager.exps;
+package querymanager.exps;
 
 public class QueryExp extends Exp {
 	SelectFromExp selectFrom;

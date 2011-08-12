@@ -4,7 +4,7 @@
 // Wed Aug 10 21:08:18 CST 2011
 //----------------------------------------------------
 
-package jvm.querymanager.syntax;
+package querymanager.syntax;
 
 
 /** CUP v0.11a beta 20060608 generated parser.

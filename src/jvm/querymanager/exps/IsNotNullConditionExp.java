@@ -1,4 +1,4 @@
-package jvm.querymanager.exps;
+package querymanager.exps;
 
 public class IsNotNullConditionExp extends ConditionExp {
 	ParameterExp parameter;

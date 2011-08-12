@@ -1,4 +1,4 @@
-package jvm.querymanager.exps;
+package querymanager.exps;
 
 public class CompareConditionExp extends ConditionExp {
 	CompareOp compareOp;
