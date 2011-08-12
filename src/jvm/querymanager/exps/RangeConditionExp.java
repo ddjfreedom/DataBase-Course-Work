@@ -1,6 +1,6 @@
 package querymanager.exps;
 
-public class RangeConditionExp extends Exp {
+public class RangeConditionExp extends ConditionExp {
 	ParameterExp parameter;
 	boolean isNot;
 	public RangeConditionExp(ParameterExp parameter, boolean isNot){

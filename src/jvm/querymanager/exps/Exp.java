@@ -2,11 +2,11 @@ package querymanager.exps;
 
 public abstract class Exp {
 	abstract Result execute();
-	static enum DisOrAll{
+	public static enum DisOrAll{
 		DISTINCT,
 		ALL
 	}
-	static enum Aggregation{
+	public static enum Aggregation{
 		COUNT,
 		SUM,
 		AVG,
@@ -14,13 +14,13 @@ public abstract class Exp {
 		MAX,
 		NO_AGGR
 	}
-	static enum MathOp{
+	public static enum MathOp{
 		PLUS,
 		MINUS,
 		TIMES,
 		DIVIDE
 	}
-	static enum CompareOp{
+	public static enum CompareOp{
 		EQ,
 		NEQ,
 		LT,
@@ -28,11 +28,11 @@ public abstract class Exp {
 		GT,
 		GE
 	}
-	static enum AnyOrAll{
+	public static enum AnyOrAll{
 		ANY,
 		ALL
 	}
-	static enum AscOrDesc{
+	public static enum AscOrDesc{
 		ASC,
 		DESC
 	}
