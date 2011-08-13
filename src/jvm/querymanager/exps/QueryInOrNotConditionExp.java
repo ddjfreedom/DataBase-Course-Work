@@ -7,4 +7,12 @@ public class QueryInOrNotConditionExp extends InOrNotConditionExp {
 		super(parameter, isNot);
 		this.query = query;
 	}
+
+	public QueryExp getQuery() {
+		return query;
+	}
+
+	public void setQuery(QueryExp query) {
+		this.query = query;
+	}
 }

@@ -11,5 +11,11 @@ public class WhereExp extends Exp {
 	Result execute() {
 		return null;
 	}
+	public ConditionExpLists getConditions() {
+		return conditions;
+	}
+	public void setConditions(ConditionExpLists conditions) {
+		this.conditions = conditions;
+	}
 
 }

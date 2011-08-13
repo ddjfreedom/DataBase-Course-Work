@@ -11,4 +11,10 @@ public class ExpressionTargetExp extends TargetExp {
 		super(alias);
 		this.mathExp = mathExp;
 	}
+	public MathExp getMathExp() {
+		return mathExp;
+	}
+	public void setMathExp(MathExp mathExp) {
+		this.mathExp = mathExp;
+	}
 }

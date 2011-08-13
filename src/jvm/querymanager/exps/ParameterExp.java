@@ -12,5 +12,17 @@ public class ParameterExp extends Exp {
 	Result execute() {
 		return null;
 	}
+	public String getListName() {
+		return listName;
+	}
+	public void setListName(String listName) {
+		this.listName = listName;
+	}
+	public String getParameter() {
+		return parameter;
+	}
+	public void setParameter(String parameter) {
+		this.parameter = parameter;
+	}
 
 }

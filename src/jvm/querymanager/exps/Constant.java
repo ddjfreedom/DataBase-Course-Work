@@ -6,4 +6,12 @@ public class Constant {
 	public Constant(Object constant){
 		this.constant = constant;
 	}
+
+	public Object getConstant() {
+		return constant;
+	}
+
+	public void setConstant(Object constant) {
+		this.constant = constant;
+	}
 }

@@ -8,4 +8,16 @@ public class ConstantCompareConditionExp extends CompareConditionExp {
 		this.operand1 = operand1;
 		this.constant = constant;
 	}
+	public ParameterExp getOperand1() {
+		return operand1;
+	}
+	public void setOperand1(ParameterExp operand1) {
+		this.operand1 = operand1;
+	}
+	public Constant getConstant() {
+		return constant;
+	}
+	public void setConstant(Constant constant) {
+		this.constant = constant;
+	}
 }

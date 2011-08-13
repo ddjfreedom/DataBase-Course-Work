@@ -8,4 +8,20 @@ public class ExistConditionExp extends ConditionExp {
 		this.isNot = isNot;
 		this.query = query;
 	}
+
+	public boolean getIsNot() {
+		return isNot;
+	}
+
+	public void setIsNot(boolean isNot) {
+		this.isNot = isNot;
+	}
+
+	public QueryExp getQuery() {
+		return query;
+	}
+
+	public void setQuery(QueryExp query) {
+		this.query = query;
+	}
 }

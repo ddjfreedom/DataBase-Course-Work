@@ -15,4 +15,20 @@ public class ConditionExpLists extends Exp {
 		return null;
 	}
 
+	public ConditionExpList getHead() {
+		return head;
+	}
+
+	public void setHead(ConditionExpList head) {
+		this.head = head;
+	}
+
+	public ConditionExpLists getTail() {
+		return tail;
+	}
+
+	public void setTail(ConditionExpLists tail) {
+		this.tail = tail;
+	}
+
 }

@@ -11,4 +11,10 @@ public class ParameterTargetExp extends TargetExp {
 		super(alias);
 		this.parameter = parameter;
 	}
+	public ParameterExp getParameter() {
+		return parameter;
+	}
+	public void setParameter(ParameterExp parameter) {
+		this.parameter = parameter;
+	}
 }

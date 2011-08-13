@@ -19,4 +19,20 @@ public class TargetExpList extends Exp {
 		return null;
 	}
 
+	public TargetExp getHead() {
+		return head;
+	}
+
+	public void setHead(TargetExp head) {
+		this.head = head;
+	}
+
+	public TargetExpList getTail() {
+		return tail;
+	}
+
+	public void setTail(TargetExpList tail) {
+		this.tail = tail;
+	}
+
 }

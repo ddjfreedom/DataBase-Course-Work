@@ -9,4 +9,20 @@ public class ConstantRangeConditionExp extends RangeConditionExp {
 		this.downLimit = downLimit;
 		this.upLimit = upLimit;
 	}
+
+	public Constant getUpLimit() {
+		return upLimit;
+	}
+
+	public void setUpLimit(Constant upLimit) {
+		this.upLimit = upLimit;
+	}
+
+	public Constant getDownLimit() {
+		return downLimit;
+	}
+
+	public void setDownLimit(Constant downLimit) {
+		this.downLimit = downLimit;
+	}
 }

@@ -12,4 +12,22 @@ public class SetQueryExp extends QueryExp {
 		this.query2 = query2;
 		this.option = option;
 	}
+	public QueryExp getQuery1() {
+		return query1;
+	}
+	public void setQuery1(QueryExp query1) {
+		this.query1 = query1;
+	}
+	public QueryExp getQuery2() {
+		return query2;
+	}
+	public void setQuery2(QueryExp query2) {
+		this.query2 = query2;
+	}
+	public int getOption() {
+		return option;
+	}
+	public void setOption(int option) {
+		this.option = option;
+	}
 }

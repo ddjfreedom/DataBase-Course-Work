@@ -13,5 +13,17 @@ public class ConditionExpList extends Exp {
 		// TODO Auto-generated method stub
 		return null;
 	}
+	public ConditionExp getHead() {
+		return head;
+	}
+	public void setHead(ConditionExp head) {
+		this.head = head;
+	}
+	public ConditionExpList getTail() {
+		return tail;
+	}
+	public void setTail(ConditionExpList tail) {
+		this.tail = tail;
+	}
 
 }

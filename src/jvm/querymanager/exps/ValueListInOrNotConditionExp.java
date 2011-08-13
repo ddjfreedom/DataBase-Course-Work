@@ -7,4 +7,12 @@ public class ValueListInOrNotConditionExp extends InOrNotConditionExp {
 		super(parameter, isNot);
 		this.values = values;
 	}
+
+	public ConstantList getValues() {
+		return values;
+	}
+
+	public void setValues(ConstantList values) {
+		this.values = values;
+	}
 }

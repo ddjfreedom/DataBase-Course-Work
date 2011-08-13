@@ -15,4 +15,20 @@ public class FromExpList extends Exp {
 		return null;
 	}
 
+	public FromExp getHead() {
+		return head;
+	}
+
+	public void setHead(FromExp head) {
+		this.head = head;
+	}
+
+	public FromExpList getTail() {
+		return tail;
+	}
+
+	public void setTail(FromExpList tail) {
+		this.tail = tail;
+	}
+
 }

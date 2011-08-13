@@ -15,4 +15,20 @@ public class QueryExp extends Exp {
 		return null;
 	}
 
+	public SelectFromExp getSelectFrom() {
+		return selectFrom;
+	}
+
+	public void setSelectFrom(SelectFromExp selectFrom) {
+		this.selectFrom = selectFrom;
+	}
+
+	public OptionalExp getOptions() {
+		return options;
+	}
+
+	public void setOptions(OptionalExp options) {
+		this.options = options;
+	}
+
 }

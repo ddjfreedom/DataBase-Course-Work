@@ -8,4 +8,20 @@ public class IsNotNullConditionExp extends ConditionExp {
 		this.parameter = parameter;
 		this.isNot = isNot;
 	}
+
+	public ParameterExp getParameter() {
+		return parameter;
+	}
+
+	public void setParameter(ParameterExp parameter) {
+		this.parameter = parameter;
+	}
+
+	public boolean getIsNot() {
+		return isNot;
+	}
+
+	public void setIsNot(boolean isNot) {
+		this.isNot = isNot;
+	}
 }

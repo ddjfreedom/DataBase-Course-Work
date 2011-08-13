@@ -19,4 +19,28 @@ public class OptionalExp extends Exp {
 		return null;
 	}
 
+	public WhereExp getWhere() {
+		return where;
+	}
+
+	public void setWhere(WhereExp where) {
+		this.where = where;
+	}
+
+	public GroupExp getGroup() {
+		return group;
+	}
+
+	public void setGroup(GroupExp group) {
+		this.group = group;
+	}
+
+	public OrderExp getOrder() {
+		return order;
+	}
+
+	public void setOrder(OrderExp order) {
+		this.order = order;
+	}
+
 }

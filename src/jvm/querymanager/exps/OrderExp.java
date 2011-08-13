@@ -13,4 +13,20 @@ public class OrderExp extends Exp {
 		return null;
 	}
 
+	public ParameterExp getParameter() {
+		return parameter;
+	}
+
+	public void setParameter(ParameterExp parameter) {
+		this.parameter = parameter;
+	}
+
+	public AscOrDesc getAscOrDesc() {
+		return ascOrDesc;
+	}
+
+	public void setAscOrDesc(AscOrDesc ascOrDesc) {
+		this.ascOrDesc = ascOrDesc;
+	}
+
 }

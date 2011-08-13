@@ -6,4 +6,12 @@ public class MatchPattern {
 	public MatchPattern(String pattern){
 		this.pattern = pattern;
 	}
+
+	public String getPattern() {
+		return pattern;
+	}
+
+	public void setPattern(String pattern) {
+		this.pattern = pattern;
+	}
 }

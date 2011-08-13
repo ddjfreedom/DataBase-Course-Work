@@ -14,4 +14,20 @@ public class GroupExp extends Exp {
 		return null;
 	}
 
+	public ParameterExp getParameter() {
+		return parameter;
+	}
+
+	public void setParameter(ParameterExp parameter) {
+		this.parameter = parameter;
+	}
+
+	public ConditionExpLists getConditions() {
+		return conditions;
+	}
+
+	public void setConditions(ConditionExpLists conditions) {
+		this.conditions = conditions;
+	}
+
 }
