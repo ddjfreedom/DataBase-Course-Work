@@ -9,6 +9,8 @@ lib/
 pom.xml
 .cake/
 src/jvm/querymanager/lexical/DBLex.java
+src/jvm/querymanager/lexical/Yylex.java
 src/jvm/querymanager/syntax/DBParser.java
+src/jvm/querymanager/syntax/Parser.java
 src/jvm/querymanager/syntax/sym.java
 classes/

@@ -27,6 +27,7 @@ private java_cup.runtime.Symbol tok(int k,Object value){
 	{return tok(sym.EOF,null);}
 %eofval}
 %state STR
+%public
 digits=[0-9]+
 doubleNum=[0-9]+[\.][0-9]+
 

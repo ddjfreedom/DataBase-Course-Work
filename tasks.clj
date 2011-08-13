@@ -4,7 +4,7 @@
   (println "begin")
   (let [lexpath "src/jvm/querymanager/lexical/"
         lexarr (into-array String [(str lexpath "DBLex.lex")
-                                   (str lexpath "DBLex.java")])
+                                   (str lexpath "Yylex.java")])
         cuppath "src/jvm/querymanager/syntax/"
         cuparr (into-array String ["-expect" "8"
                                    "-parser" "DBParser"
@@ -15,3 +15,4 @@
   (println "done"))
 
 (deftask compile-java #{codegen})
+
