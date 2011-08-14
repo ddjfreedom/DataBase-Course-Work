@@ -14,9 +14,9 @@ terminal	CREATE, UPDATE, ALTER, INSERT, UNIQUE, DELETE, SELECT, DROP, INDEX, CHE
 terminal	ASSERT, TABLE, DATABASE, VALUES, INTO, FROM, DISTINCT, LIKE, IN, VIEW, BETWEEN, COUNT;
 terminal	GROUP, HAVING, BY, ORDER, SET, SUM, AVG, WHERE, MAX, MIN, ESCAPE, PRIMARY, KEY;
 terminal	REFERENCE, JOIN, NOT, NULL, AS, ON, ALL, INTERSECT, EXCEPT, UNION, NATURAL, FULL, SCHEMA;
-terminal	OUTER, INNER, IS, CHAR, DATE, INT, CARCHAR, CASCADE, UNKNOWN, TRUE, FALSE, CROSS, TIME;
+terminal	OUTER, INNER, IS, CHAR, DATE, INT, VARCHAR, CASCADE, UNKNOWN, TRUE, FALSE, CROSS, TIME;
 terminal	ANY, CONNECT, EXISTS, ASC, DESC;
-terminal	COMMA, COLON, SEMICOLON, LPAREN, RPAREN, DOT, PLUS, MINUS, STAR, DEVIDE, EQ, NEQ, LT, LE, GT, GE, AND, OR;
+terminal	COMMA, COLON, SEMICOLON, LPAREN, RPAREN, DOT, PLUS, MINUS, STAR, DIVIDE, EQ, NEQ, LT, LE, GT, GE, AND, OR;
 terminal Integer	NUMBER;
 terminal Double		DOUBLE;
 terminal String	STRING, ID;
@@ -62,7 +62,7 @@ precedence left AND;
 precedence left EQ, NEQ;
 precedence nonassoc LT, LE, GT, GE;
 precedence left PLUS, MINUS;
-precedence left STAR, DEVIDE;
+precedence left STAR, DIVIDE;
 precedence left DOT;
 
 start with instruction;
@@ -109,7 +109,7 @@ fieldID ::= ID:i {:RESULT = new ParameterExp(null, i);:}
 mathExp ::= attribute:a1 PLUS attribute:a2 {:RESULT = new MathExp(a1, a2, Exp.MathOp.PLUS);:}
 				| attribute:a1 MINUS attribute:a2 {:RESULT = new MathExp(a1, a2, Exp.MathOp.MINUS);:}
 				| attribute:a1 STAR attribute:a2 {:RESULT = new MathExp(a1, a2, Exp.MathOp.TIMES);:}
-				| attribute:a1 DEVIDE attribute:a2 {:RESULT = new MathExp(a1, a2, Exp.MathOp.DIVIDE);:}
+				| attribute:a1 DIVIDE attribute:a2 {:RESULT = new MathExp(a1, a2, Exp.MathOp.DIVIDE);:}
 				;
 
 aggrAttribute ::= aggregationOp:ao LPAREN distinctOrAll:d columnID:c RPAREN

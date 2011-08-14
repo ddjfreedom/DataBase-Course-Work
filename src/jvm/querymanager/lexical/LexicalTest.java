@@ -2,7 +2,7 @@ package querymanager.lexical;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-
+import querymanager.syntax.sym;
 
 public class LexicalTest {
 	public static void main(String [] args){
@@ -18,7 +18,7 @@ public class LexicalTest {
 	      Yylex lexer = new Yylex(inp,errorMsg);
 	      java_cup.runtime.Symbol tok = null;
 
-	      do { 
+	      do {
 	         try {
 				tok=lexer.next_token();
 				System.out.printf("%s\t\t%s\n",symnames[tok.sym],tok.value);
@@ -26,7 +26,7 @@ public class LexicalTest {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-	        
+
 	      } while (tok.sym != sym.EOF);
 
 	    try {
@@ -36,7 +36,7 @@ public class LexicalTest {
 			e.printStackTrace();
 		}
 	}
-	
+
 	static String symnames[] = new String[100];
 	  static {
 			symnames[sym.CREATE] = "create";
@@ -51,7 +51,7 @@ public class LexicalTest {
 			symnames[sym.CHECK] = "CHECK";
 			symnames[sym.TRIGGER] = "TRIGGER";
 			symnames[sym.ASSERT] = "ASSERT";
-			symnames[sym.TABLE] = "TABLE"; 
+			symnames[sym.TABLE] = "TABLE";
 			symnames[sym.DATABASE] = "DATABASE";
 			symnames[sym.VALUES] = "VALUES";
 			symnames[sym.INTO] = "INTO";
@@ -62,7 +62,7 @@ public class LexicalTest {
 			symnames[sym.VIEW] = "VIEW";
 			symnames[sym.BETWEEN] = "BETWEEN";
 			symnames[sym.COUNT] = "COUNT";
-			symnames[sym.GROUP] = "GROUP"; 
+			symnames[sym.GROUP] = "GROUP";
 			symnames[sym.HAVING] = "HAVING";
 			symnames[sym.BY] = "BY";
 			symnames[sym.ORDER] = "ORFER";
@@ -70,12 +70,12 @@ public class LexicalTest {
 			symnames[sym.SUM] = "SUM";
 			symnames[sym.AVG] = "AVG";
 			symnames[sym.WHERE] = "WHERE";
-			symnames[sym.MAX] = "MAX"; 
+			symnames[sym.MAX] = "MAX";
 			symnames[sym.MIN] = "MIN";
 			symnames[sym.AND] = "AND";
 			symnames[sym.OR] = "OR";
 			symnames[sym.ESCAPE] = "ESCAPE";
-			symnames[sym.PRIMARY] = "PRIMARY"; 
+			symnames[sym.PRIMARY] = "PRIMARY";
 			symnames[sym.KEY] = "KEY";
 			symnames[sym.REFERENCE] = "REFERENCE";
 			symnames[sym.JOIN] = "JOIN";
@@ -83,27 +83,27 @@ public class LexicalTest {
 			symnames[sym.NULL] = "NULL";
 			symnames[sym.AS] = "AS";
 			symnames[sym.ON] = "ON";
-			symnames[sym.ALL] = "ALL"; 
+			symnames[sym.ALL] = "ALL";
 			symnames[sym.INTERSECT] = "INTERSECT";
 			symnames[sym.EXCEPT] = "EXCEPT";
 			symnames[sym.UNION] = "UNION";
-			symnames[sym.NATURAL] = "NATURAL"; 
+			symnames[sym.NATURAL] = "NATURAL";
 			symnames[sym.FULL] = "FULL";
 			symnames[sym.SCHEMA] = "SCHEMA";
-			symnames[sym.OUTER] = "OUTER"; 
+			symnames[sym.OUTER] = "OUTER";
 			symnames[sym.INNER] = "INNER";
-			symnames[sym.IS] = "IS"; 
+			symnames[sym.IS] = "IS";
 			symnames[sym.CHAR] = "CHAR";
 			symnames[sym.DATE] = "DATE";
 			symnames[sym.INT] = "INT";
 			symnames[sym.VARCHAR] = "VARCHAR";
-			symnames[sym.CASCADE] = "CASCADE"; 
+			symnames[sym.CASCADE] = "CASCADE";
 			symnames[sym.UNKNOWN] = "UNKNOWN";
 			symnames[sym.TRUE] = "TRUE";
 			symnames[sym.FALSE] = "FALSE";
 			symnames[sym.CROSS] = "CROSS";
 			symnames[sym.TIME] = "TIME";
-			symnames[sym.NUMBER] = "NUMBER"; 
+			symnames[sym.NUMBER] = "NUMBER";
 			symnames[sym.STRING] = "STRING";
 			symnames[sym.ANY] = "ANY";
 			symnames[sym.STAR] = "STAR";
@@ -117,7 +117,7 @@ public class LexicalTest {
 			symnames[sym.MINUS] = "MINUS";
 			symnames[sym.EQ] = "EQ";
 			symnames[sym.NEQ] = "NEQ";
-			symnames[sym.LT] = "LT"; 
+			symnames[sym.LT] = "LT";
 			symnames[sym.LE] = "LE";
 			symnames[sym.GT] = "GT";
 			symnames[sym.GE] = "GE";

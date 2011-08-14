@@ -1,5 +1,6 @@
 package querymanager.lexical;
 import ErrorMsg.ErrorMsg;
+import querymanager.syntax.sym;
 
 %%
 %{
@@ -109,7 +110,7 @@ doubleNum=[0-9]+[\.][0-9]+
 <YYINITIAL>"."		{return tok(sym.DOT,null);}
 <YYINITIAL>"+"		{return tok(sym.PLUS,null);}
 <YYINITIAL>"-"		{return tok(sym.MINUS,null);}
-<YYINITIAL>"/"		{return tok(sym.DEVIDE,null);}
+<YYINITIAL>"/"		{return tok(sym.DIVIDE,null);}
 
 <YYINITIAL>"="		{return tok(sym.EQ,null);}
 <YYINITIAL>"<>"		{return tok(sym.NEQ,null);}
