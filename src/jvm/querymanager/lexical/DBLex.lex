@@ -100,6 +100,73 @@ doubleNum=[0-9]+[\.][0-9]+
 <YYINITIAL>asc		{return tok(sym.ASC, null);}
 <YYINITIAL>desc		{return tok(sym.DESC, null);}
 
+<YYINITIAL>CREATE		{return tok(sym.CREATE,null);}
+<YYINITIAL>UPDATE		{return tok(sym.UPDATE,null);}
+<YYINITIAL>ALTER	{return tok(sym.ALTER,null);}
+<YYINITIAL>INSERT		{return tok(sym.INSERT,null);}
+<YYINITIAL>DELETE		{return tok(sym.DELETE,null);}
+<YYINITIAL>ASSERT		{return tok(sym.ASSERT,null);}
+<YYINITIAL>DATABASE		{return tok(sym.DATABASE,null);}
+<YYINITIAL>VALUES		{return tok(sym.VALUES,null);}
+<YYINITIAL>INTO		{return tok(sym.INTO,null);}
+<YYINITIAL>DISTINCT		{return tok(sym.DISTINCT,null);}
+<YYINITIAL>DROP		{return tok(sym.DROP,null);}
+<YYINITIAL>TABLE		{return tok(sym.TABLE,null);}
+<YYINITIAL>SELECT		{return tok(sym.SELECT,null);}
+<YYINITIAL>FROM		{return tok(sym.FROM,null);}
+<YYINITIAL>WHERE		{return tok(sym.WHERE,null);}
+<YYINITIAL>ORDER		{return tok(sym.ORDER,null);}
+<YYINITIAL>BY		{return tok(sym.BY,null);}
+<YYINITIAL>LIKE		{return tok(sym.LIKE,null);}
+<YYINITIAL>INDEX		{return tok(sym.INDEX,null);}
+<YYINITIAL>CHECK		{return tok(sym.CHECK,null);}
+<YYINITIAL>TRIGGER		{return tok(sym.TRIGGER,null);}
+<YYINITIAL>IN		{return tok(sym.IN,null);}
+<YYINITIAL>VIEW		{return tok(sym.VIEW,null);}
+<YYINITIAL>BETWEEN		{return tok(sym.BETWEEN,null);}
+<YYINITIAL>COUNT		{return tok(sym.COUNT,null);}
+<YYINITIAL>GROUP		{return tok(sym.GROUP,null);}
+<YYINITIAL>SET		{return tok(sym.SET,null);}
+<YYINITIAL>SUM		{return tok(sym.SUM,null);}
+<YYINITIAL>AVG		{return tok(sym.AVG,null);}
+<YYINITIAL>MAX		{return tok(sym.MAX,null);}
+<YYINITIAL>MIN		{return tok(sym.MIN,null);}
+<YYINITIAL>AND		{return tok(sym.AND,null);}
+<YYINITIAL>OR		{return tok(sym.OR,null);}
+<YYINITIAL>ESCAPE		{return tok(sym.ESCAPE,null);}
+<YYINITIAL>PRIMARY		{return tok(sym.PRIMARY,null);}
+<YYINITIAL>KEY		{return tok(sym.KEY,null);}
+<YYINITIAL>REFERENCE		{return tok(sym.REFERENCE,null);}
+<YYINITIAL>JOIN		{return tok(sym.JOIN,null);}
+<YYINITIAL>NOT		{return tok(sym.NOT,null);}
+<YYINITIAL>NULL		{return tok(sym.NULL,null);}
+<YYINITIAL>AS		{return tok(sym.AS,null);}
+<YYINITIAL>ON		{return tok(sym.ON,null);}
+<YYINITIAL>ALL		{return tok(sym.ALL,null);}
+<YYINITIAL>INTERSECT		{return tok(sym.INTERSECT,null);}
+<YYINITIAL>EXCEPT		{return tok(sym.EXCEPT,null);}
+<YYINITIAL>UNION		{return tok(sym.UNION,null);}
+<YYINITIAL>NATURAL		{return tok(sym.NATURAL,null);}
+<YYINITIAL>FULL		{return tok(sym.FULL,null);}
+<YYINITIAL>SCHEMA		{return tok(sym.SCHEMA,null);}
+<YYINITIAL>OUTER		{return tok(sym.OUTER,null);}
+<YYINITIAL>INNER		{return tok(sym.INNER,null);}
+<YYINITIAL>HAVING		{return tok(sym.HAVING,null);}
+<YYINITIAL>IS		{return tok(sym.IS,null);}
+<YYINITIAL>CHAR		{return tok(sym.CHAR,null);}
+<YYINITIAL>DATE		{return tok(sym.DATE,null);}
+<YYINITIAL>INT		{return tok(sym.INT,null);}
+<YYINITIAL>VARCHAR		{return tok(sym.VARCHAR,null);}
+<YYINITIAL>CASCADE		{return tok(sym.CASCADE,null);}
+<YYINITIAL>UNKNOWN		{return tok(sym.UNKNOWN,null);}
+<YYINITIAL>TRUE		{return tok(sym.TRUE,null);}
+<YYINITIAL>FALSE		{return tok(sym.FALSE,null);}
+<YYINITIAL>CROSS		{return tok(sym.CROSS,null);}
+<YYINITIAL>ANY		{return tok(sym.ANY,null);}
+<YYINITIAL>TIME		{return tok(sym.TIME,null);}
+<YYINITIAL>ASC	{return tok(sym.ASC, null);}
+<YYINITIAL>DESC		{return tok(sym.DESC, null);}
+
 
 <YYINITIAL>"*"		{return tok(sym.STAR,null);}
 <YYINITIAL>","		{return tok(sym.COMMA,null);}
