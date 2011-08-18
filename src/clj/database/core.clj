@@ -1,7 +1,8 @@
 (ns database.core
+  (:use [querymanager.execution :only [parse lex]]
+        [clojure.pprint :only [pprint]])
   (:gen-class))
 
 (defn -main [& args]
-  (let [arr (make-array String 1)]
-    (do (aset arr 0 (first args))
-        (querymanager.lexical.LexicalTest/main arr))))
+  (do (pprint (parse (first args)))
+      (prn)))
