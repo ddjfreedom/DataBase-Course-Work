@@ -113,7 +113,7 @@ mathExp ::= attribute:a1 PLUS attribute:a2 {:RESULT = new MathExp(a1, a2, Exp.Ma
 				;
 
 aggrAttribute ::= aggregationOp:ao LPAREN distinctOrAll:d columnID:c RPAREN
-				{:new AggregationExp(ao, d, c);:}
+				{:RESULT = new AggregationExp(ao, d, c);:}
 				;
 aggregationOp ::= COUNT {:RESULT = Exp.Aggregation.COUNT;:}
 				| SUM {:RESULT = Exp.Aggregation.SUM;:}
