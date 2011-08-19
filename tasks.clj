@@ -1,18 +1,17 @@
 (use 'clojure.contrib.shell-out)
-
-(deftask codegen #{"src/jvm/querymanager/lexical/DBLex.lex"}
-  (println "begin")
-  (let [lexpath "src/jvm/querymanager/lexical/"
-        lexarr (into-array String [(str lexpath "DBLex.lex")
-                                   (str lexpath "Yylex.java")])
-        cuppath "src/jvm/querymanager/syntax/"
-        cuparr (into-array String ["-expect" "8"
-                                   "-parser" "DBParser"
-                                   (str cuppath "DBParse.cup")])]
-    (jlex.Main/main lexarr)
-    (java_cup.Main/main cuparr)
-    (sh "mv" "sym.java" "DBParser.java" cuppath))
-  (println "done"))
+(let [lexpath "src/jvm/querymanager/lexical/"
+      cuppath "src/jvm/querymanager/syntax/"]
+  (deftask codegen
+    (let [lexs (map #(str lexpath %) ["DBLex.lex" "Yylex.java"])
+          cups (map #(str cuppath %) ["DBParse.cup" "DBParser.java"])
+          cuparr (into-array String ["-expect" "8"
+                                     "-parser" "DBParser"
+                                     (first cups)])]
+      (when (apply > (map #(-> % java.io.File. .lastModified) lexs))
+        (jlex.Main/main (into-array String lexs)))
+      (when (apply > (map #(-> % java.io.File. .lastModified) cups))
+        (java_cup.Main/main cuparr)
+        (sh "mv" "sym.java" "DBParser.java" cuppath)))))
 
 (deftask compile-java #{codegen})
 
