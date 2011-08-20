@@ -1,8 +1,8 @@
 (ns database.core
-  (:use [querymanager.execution :only [parse lex]]
+  (:use [querymanager.execution :only [parse exec]]
         [clojure.pprint :only [pprint]])
   (:gen-class))
 
 (defn -main [& args]
-  (do (pprint (parse (first args)))
+  (do (pprint (exec (parse (first args))))
       (prn)))

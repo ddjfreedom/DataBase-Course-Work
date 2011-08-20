@@ -22,76 +22,88 @@
       (recur (.getTail explist)
              (conj result (f (.getHead explist)))))))
 
-(defmulti transform class)
-(defmethod transform QueryExp [e]
-  (let [{:keys [select from] :as selfrom} (transform (.getSelectFrom e))
-        {:keys [where group order] :as wgo} (transform (.getOptions e))]
+
+(defmulti java2cljmap
+  "Convert java class hierarchy to clojure data structure"
+  class)
+(defmethod java2cljmap QueryExp [e]
+  (let [{:keys [select from] :as selfrom} (java2cljmap (.getSelectFrom e))
+        {:keys [where group order] :as wgo}
+        (java2cljmap (.getOptions e))]
     (merge selfrom wgo)))
-(defmethod transform SelectFromExp [e]
-  (let [targets (map-explist transform
+(defmethod java2cljmap SelectFromExp [e]
+  (let [targets (map-explist java2cljmap
                              (.getTargetList e))
         from (map-explist #(.getListName %)
                           (.getFromList e))]
     (into {} [[:select targets] [:from from]])))
-(defmethod transform ParameterTargetExp [e]
-  [(transform (.getParameter e))
+(defmethod java2cljmap ParameterTargetExp [e]
+  [(java2cljmap (.getParameter e))
    (.getAlias e)])
-(defmethod transform AggregationTargetExp [e]
-  [(transform (.getAggregationExp e))
+(defmethod java2cljmap AggregationTargetExp [e]
+  [(java2cljmap (.getAggregationExp e))
    (.getAlias e)])
-(defmethod transform ExpressionTargetExp [e]
-  [(transform (.getMathExp e))
+(defmethod java2cljmap ExpressionTargetExp [e]
+  [(java2cljmap (.getMathExp e))
    (.getAlias e)])
-(defmethod transform OptionalExp [e]
-  (let [where (map-explist (fn [elt]
-                               (map-explist transform elt))
-                             (-> e .getWhere .getConditions))
-        group (transform (.getGroup e))
-        order (transform (.getOrder e))]
-    {:where where :group group :order order}))
-(defmethod transform ParameterCompareConditionExp [e]
-  (vec (map transform [(.getCompareOp e)
+(defmethod java2cljmap OptionalExp [e]
+  (let [where (.getWhere e)
+        group (.getGroup e)
+        order (.getOrder e)]
+    {:where (when where
+              (map-explist #(map-explist java2cljmap %) (.getConditions where)))
+     :group (when group (java2cljmap group))
+     :order (when order (java2cljmap order))}))
+(defmethod java2cljmap ParameterCompareConditionExp [e]
+  (vec (map java2cljmap [(.getCompareOp e)
                        (.getParameter1 e)
                        (.getParameter2 e)])))
-(defmethod transform ConstantCompareConditionExp [e]
-  (conj (vec (map transform [(.getCompareOp e)
+(defmethod java2cljmap ConstantCompareConditionExp [e]
+  (conj (vec (map java2cljmap [(.getCompareOp e)
                              (.getOperand1 e)]))
-        (transform  (.getConstant e))))
-(defmethod transform RangeConditionExp [e]
+        (java2cljmap  (.getConstant e))))
+(defmethod java2cljmap RangeConditionExp [e]
   (into [:RANGE
          (not (.getIsNot e))]
-        (map transform [(.getParameter e)
+        (map java2cljmap [(.getParameter e)
                         (.getDownLimit e)
                         (.getUpLimit e)])))
-(defmethod transform ValueListInOrNotConditionExp [e]
+(defmethod java2cljmap ValueListInOrNotConditionExp [e]
   (conj [:IN
          (not (.getIsNot e))
-         (transform (.getParameter e))]
-        (set (map-explist transform (.getValues e)))))
-(defmethod transform LikeConditionExp [e]
+         (java2cljmap (.getParameter e))]
+        (set (map-explist java2cljmap (.getValues e)))))
+(defmethod java2cljmap LikeConditionExp [e]
   [:LIKE
    (not (.getIsNot e))
-   (transform (.getParameter e))
-   (transform (.getPattern e))])
-(defmethod transform IsNotNullConditionExp [e]
-  [:NULL (not (.getIsNot e)) (transform (.getParameter e))])
-(defmethod transform GroupExp [e]
-  [(transform (.getParameter e))
-   (map-explist #(map-explist transform %) (.getConditions e))])
-(defmethod transform OrderExp [e]
-  (vec (map transform [(.getParameter e)
+   (java2cljmap (.getParameter e))
+   (java2cljmap (.getPattern e))])
+(defmethod java2cljmap IsNotNullConditionExp [e]
+  [:NULL (not (.getIsNot e)) (java2cljmap (.getParameter e))])
+(defmethod java2cljmap GroupExp [e]
+  [(java2cljmap (.getParameter e))
+   (map-explist #(map-explist java2cljmap %) (.getConditions e))])
+(defmethod java2cljmap OrderExp [e]
+  (vec (map java2cljmap [(.getParameter e)
                        (.getAscOrDesc e)])))
-(defmethod transform ParameterExp [e]
+(defmethod java2cljmap ParameterExp [e]
   [(.getListName e) (.getParameter e)])
-(defmethod transform AggregationExp [e]
-  (vec (map transform [(.getAggr e)
+(defmethod java2cljmap AggregationExp [e]
+  (vec (map java2cljmap [(.getAggr e)
                        (.getDisOrAll e)
                        (.getParameter e)])))
-(defmethod transform MathExp [e]
-  (vec (map transform [(.getOperand1 e)
-                       (.getMathOp e)
-                       (.getOperand2 e)])))
-(defmethod transform Enum [e] (enum2keyword e))
-(defmethod transform Constant [e] (.getConstant e))
-(defmethod transform MatchPattern [e] (.getPattern e))
-(defmethod transform nil [e] nil)
+(defmethod java2cljmap MathExp [e]
+  (vec (map java2cljmap [(.getMathOp e)
+                         (.getOperand1 e)
+                         (.getOperand2 e)])))
+(defmethod java2cljmap Enum [e] (enum2keyword e))
+(defmethod java2cljmap Constant [e] (.getConstant e))
+(defmethod java2cljmap MatchPattern [e] (.getPattern e))
+(defmethod java2cljmap nil [e] nil)
+
+(defn transform
+  "Transform SQL clojure data structure
+ representation to relational algebra"
+  [expr]
+  (let [{:keys [select from where group order]} (java2cljmap expr)]
+    [:projection select [:selection where [:product from]]]))
