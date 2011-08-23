@@ -13,12 +13,13 @@ scan with {:return getScanner().next_token();:};
 terminal	CREATE, UPDATE, ALTER, INSERT, UNIQUE, DELETE, SELECT, DROP, INDEX, CHECK, TRIGGER;
 terminal	ASSERT, TABLE, DATABASE, VALUES, INTO, FROM, DISTINCT, LIKE, IN, VIEW, BETWEEN, COUNT;
 terminal	GROUP, HAVING, BY, ORDER, SET, SUM, AVG, WHERE, MAX, MIN, ESCAPE, PRIMARY, KEY;
-terminal	REFERENCE, JOIN, NOT, NULL, AS, ON, ALL, INTERSECT, EXCEPT, UNION, NATURAL, FULL, SCHEMA;
+terminal	REFERENCES, JOIN, NOT, NULL, AS, ON, ALL, INTERSECT, EXCEPT, UNION, NATURAL, FULL, SCHEMA;
 terminal	OUTER, INNER, IS, CHAR, DATE, INT, VARCHAR, CASCADE, UNKNOWN, TRUE, FALSE, CROSS, TIME;
+terminal 	SMALLINT, REAL, FLOAT;
 terminal	ANY, CONNECT, EXISTS, ASC, DESC;
 terminal	COMMA, COLON, SEMICOLON, LPAREN, RPAREN, DOT, PLUS, MINUS, STAR, DIVIDE, EQ, NEQ, LT, LE, GT, GE, AND, OR;
 terminal Integer	NUMBER;
-terminal Double		DOUBLE;
+terminal Double		DOUBLENUMBER;
 terminal String	STRING, ID;
 
 nonterminal Exp instruction;
@@ -31,7 +32,7 @@ nonterminal ConditionExpLists conditionLists;
 nonterminal ConditionExp condition;
 nonterminal TargetExp attribute;
 nonterminal FromExp relation;
-nonterminal updateExp, createExp, insertExp, deleteExp, alterExp;
+nonterminal dropExp, alterExp;
 nonterminal Exp.DisOrAll distinctOrAll;
 nonterminal String nickName;
 nonterminal ParameterExp columnID, fieldID;
@@ -52,6 +53,17 @@ nonterminal ExistConditionExp notExistExp;
 nonterminal GroupExp groupByList;
 nonterminal OrderExp orderByList;
 nonterminal AscOeDesc ascOrDesc;
+nonterminal InsertExp insertExp;
+nonterminal ParameterExpList fieldIDList;
+nonterminal UpdateExp updateExp;
+nonterminal AssignmentExpList assignmentExpList;
+nonterminal AssignmentExp assignmentExp;
+nonterminal DeleteExp deleteExp;
+nonterminal CreateExp createExp;
+nonterminal TableElementExpList createElementExpList;
+nonterminal TableElementTypeExp createElementExp;
+nonterminal ElementDataType dataType;
+nonterminal Exp.Restrict restrictExp;
 
 
 precedence left SEMICOLON;
@@ -68,7 +80,11 @@ precedence left DOT;
 start with instruction;
 
 instruction ::= queryExp:q {:RESULT = q;:}
-				| updateExp | createExp | insertExp | deleteExp | alterExp;
+				| updateExp:u {:RESULT = u;:}
+				| createExp:c {:RESULT = c;:}
+				| insertExp:i {:RESULT = i;:}
+				| deleteExp:d {:RESULT = d;:}
+				| alterExp | dropExp;
 
 queryExp ::= selFrom:sf optionalList:op {:RESULT = new QueryExp(sf, op);:}
 				| LPAREN queryExp:qe RPAREN {:RESULT = qe;:}
@@ -95,6 +111,7 @@ nickName ::= ID:i {:RESULT = i;:}
 attribute ::= columnID:c nickName:n {:RESULT = new ParameterTargetExp(c, n);:}
 				| mathExp:m nickName:n {:RESULT = new ExpressionTargetExp(m, n);:}
 				| aggrAttribute:a nickName:n {:RESULT = new AggregationTargetExp(a, n);:}
+				| NUMBER:n {:RESULT = new ConstantTargetExp(new Constant(n));:}
 				;
 
 columnID ::= fieldID:f {:RESULT = f;:}
@@ -211,3 +228,51 @@ orderByList ::= ORDER BY fieldID:f {:RESULT = new OrderExp(f, null);:}
 				| ORDER BY fieldID:f ASC {:RESULT = new OrderExp(f, Exp.AscOrDesc.ASC);:}
 				| ORDER BY fieldID:f DESC {:RESULT = new OrderExp(f, Exp.AscOrDesc.DESC);:}
 				| ;
+
+insertExp ::= INSERT INTO ID:i VALUES LPAREN valueList:vl RPAREN {:RESULT = new ConstantInsertExp(i, null, vl);:}
+				| INSERT INTO ID:i LPAREN fieldIDList:fl RPAREN VALUES LPAREN valueList:vl RPAREN {:RESULT = new ConstantInsertExp(i, fl, vl);:}
+				| INSERT INTO ID:i VALUES queryExp:q {:RESULT = new QueryInsertExp(i, null, q);:}
+				| INSERT INTO ID:i LPAREN fieldIDList:fl RPAREN VALUES queryExp {:RESULT = new QueryInsertExp(i, fl, q);:}
+				;
+fieldIDList ::= fieldID:f {:RESULT = new ParameterExpList(f, null);:}
+				| fieldID:f COMMA fieldIDList:fl {:RESULT = new ParameterExpList(f, fl);:}
+				;
+updateExp ::= UPDATE ID:i SET assignmentExpList:al whereList:wl {:RESULT = new UpdateExp(i, al, wl);:}
+				;
+
+assignmentExpList ::= assignmentExp:a {:RESULT = new AssignmentExpList(a, null);:}
+				| assignmentExp:a COMMA assignmentExpList:al {:RESULT = new AssignmentExpList(a, al);:}
+				;
+				
+assignmentExp ::= fieldID:f EQ NUMBER:n {:RESULT = new ConstantAssignmentExp(f, new Constant(n));:}
+				| fieldID:f EQ STRING:s {:RESULT = new ConstantAssignmentExp(f, new Constant(s));:}
+				| fieldID:f EQ mathExp:m {:RESULT = new ExpressionAssignmentExp(f, m);:}
+				;
+
+deleteExp ::= DELETE FROM relation:r whereList:wl {:RESULT = new DeleteExp(r, wl);:}
+				;				
+
+createExp ::= CREATE TABLE ID:i LPAREN createElementExpList:cl RPAREN {:RESULT = new CreateExp(i,cl);:}
+				;
+
+createElementExpList ::= createElementExp:c {:RESULT = new TableElementExpList(c,null);:}
+				| createElementExp:c COMMA createElementExpList:cl {:RESULT = new TableElementExpList(c, cl);:}
+				;
+
+createElementExp ::= ID:i dataType:dt restrictExp:r {:RESULT = new TableElementTypeExp(i, dt, r);:}
+				;
+
+dataType ::= SMALLINT {:RESULT = new ElementDataType(Exp.DataType.SMALLINT, 0);:}
+				| CHAR LPAREN NUMBER:n RPAREN {:RESULT = new ElementDataType(Exp.DataType.CHAR, n);:}
+				| VARCHAR LPAREN NUMBER:n RPAREN {:RESULT = new ElementDataType(Exp.DataType.VARCHAR, n);:}
+				| INT {:RESULT = new ElementDataType(Exp.DataType.INT, 0);:}
+				| REAL {:RESULT = new ElementDataType(Exp.DataType.REAL, 0);:}
+				| FLOAT LPAREN NUMBER:n RPAREN {:RESULT = new ElementDataType(Exp.DataType.FLOAT, n);:}
+				| DATE {:RESULT = new ElementDataType(Exp.DataType.DATE, 0);:}
+				| TIME {:RESULT = new ElementDataType(Exp.DataType.TIME, 0);:}
+				;
+				
+restrictExp ::= 
+				| UNIQUE {:RESULT = Exp.Restrict.UNIQUE;:}
+				| PRIMARY KEY {:RESULT = Exp.Restrict.PRIMARYKEY;:}
+				;
