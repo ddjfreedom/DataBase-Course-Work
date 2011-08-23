@@ -1,15 +1,15 @@
 (ns querymanager.execution
   (:use [querymanager.transform :only [java2cljmap transform]]
-        [clojure.contrib.duck-streams :only [read-lines]]
-        [clojure.string :only [split]]
+        [disk.tablemanager :only [create-table attr? val-accessor]]
         [clojure.contrib.combinatorics :only [cartesian-product]]
-        [clojure.contrib.seq-utils :only [positions separate]])
+        [clojure.contrib.seq-utils :only [separate]])
   (:require [clojure.string :only [replace]])
   (:import [querymanager.lexical Yylex]
            [querymanager.syntax DBParser sym]
            [java.io FileInputStream]
            [java_cup.runtime Symbol]
-           [java.util.regex Pattern]))
+           [java.util.regex Pattern]
+           [disk.tablemanager Table]))
 
 (defn lex [file-name]
   (with-open [fis (FileInputStream. file-name)]
@@ -22,65 +22,21 @@
 (defn parse
   ([file-name sel]
      (with-open [fis (FileInputStream. file-name)]
-       (let [lex (Yylex. fis)
-             syn (DBParser. lex)
-             parse-tree (.parse syn)]
+       (let [parse-tree (-> fis
+                            Yylex.
+                            DBParser.
+                            .parse)]
          (if sel
            (java2cljmap (.value parse-tree))
            (transform (.value parse-tree))))))
   ([file-name] (parse file-name nil)))
 
-(defrecord Table [header tuples])
-
-(defn- get-tuples [name]
-  (loop [tuples (map #(split % #":") (read-lines name))
-         res []]
-    (if (seq tuples)
-      (recur (rest tuples)
-             (conj res
-                   (map #(try (Integer/parseInt %)
-                              (catch NumberFormatException e %))
-                        (first tuples))))
-      res)))
-
-(defn create-table [name]
-  (let [full-tuples (get-tuples name)
-        header (first full-tuples)]
-    (Table. (map (fn [attr] [name attr]) header)
-            (rest full-tuples))))
-
 (defn table-product [tables]
-  (let [headers (map (fn [{:keys [name header]}]
-                       (if name
-                         (map (fn [h] [name h]) header)
-                         header))
-                     tables)
+  (let [headers (map #(:header %) tables)
         tuples  (map (fn [t] (apply concat t))
                      (apply cartesian-product
                             (map #(:tuples %) tables)))]
     (Table. (apply concat headers) tuples)))
-
-(defn- attr-eq? [[tname aname] [htname haname]]
-  (and (or (nil? tname)
-           (= tname htname))
-       (= aname haname)))
-
-(defn- get-column [attr header]
-  (first (positions #(attr-eq? attr %) header)))
-
-(defn- attr? [v] (vector? v))
-
-(defn- compare-test
-  ([header comp-f [v1 v2] tuple]
-     (compare-test header comp-f v1 v2 tuple))
-  ([header comp-f v1 v2 tuple]
-     (let [col1 (when (attr? v1) (get-column v1 header))
-           col2 (when (attr? v2) (get-column v2 header))]
-       (cond (and col1 col2)
-             (comp-f (nth tuple col1) (nth tuple col2))
-             col1 (comp-f (nth tuple col1) v2)
-             col2 (comp-f v1 (nth tuple col2))
-             :else (comp-f v1 v2)))))
 
 (defn- build-regex
   "Builds a regex from SQL pattern string s"
@@ -98,33 +54,33 @@
                 :LE #(<= (compare %1 %2) 0),
                 :GE #(>= (compare %1 %2) 0)}]
   (defn- selection-test [condition tuples header]
-    (let [[test-type & args] condition
-          tuple-test (partial compare-test header)]
+    (let [[test-type & args] condition]
       (cond (test-type comp-ops)
-            (separate #(tuple-test (test-type comp-ops) args %)
-                      tuples)
+            (let [[acc1 acc2] (map #(val-accessor % header) args)
+                  op (test-type comp-ops)]
+              (separate #(op (acc1 %) (acc2 %)) tuples))
             ;; Range has the form [:RANGE f attr lower upper]
             ;; where f is either identity or not
             (= test-type :RANGE)
             (let [[f attr lower upper] args
-                  op (comp-ops :LT)]
-              (separate #(f (and (tuple-test op lower attr %)
-                                 (tuple-test op attr upper %)))
+                  op (comp-ops :LT)
+                  [acc accl accu] (map #(val-accessor % header)
+                                       [attr lower upper])]
+              (separate #(f (and (op (accl lower) (acc %))
+                                 (op (acc %) (accu upper))))
                         tuples))
             ;; In has the form [:IN f attr val-set]
             ;; where f is either identity or not
             (= test-type :IN)
-            (let [[f attr r] args]
-              (separate #(f (r (if (attr? attr)
-                                 (nth % (get-column attr header))
-                                 attr)))
+            (let [[f attr valueset] args
+                  acc (val-accessor attr header)]
+              (separate #(f (valueset (acc %)))
                         tuples))
             (= test-type :LIKE)
-            (let [[f attr pattern] args]
+            (let [[f attr pattern] args
+                  acc (val-accessor attr header)]
               (separate #(f (re-matches (build-regex pattern)
-                                        (if (attr? attr)
-                                          (nth % (get-column attr header))
-                                          attr)))
+                                        (acc %)))
                         tuples))
             :else (println "not implemented yet")))))
 
@@ -158,15 +114,13 @@
   (let [[attrs table] (rest e)
         [attrs aliases] (reduce (fn [[r1 r2] [a1 a2]]
                                   [(conj r1 a1)
-                                   (if a2
-                                     (conj r2 [nil a2])
-                                     (conj r2 a1))])
+                                   (conj r2 (if a2 [nil a2] a1))])
                                 [[] []]
                                 attrs)
         {:keys [header tuples]} (exec table)
-        attr-columns (map  #(get-column % header) attrs)
+        val-accessors (map  #(val-accessor % header) attrs)
         project (fn [tuple]
-                  (reduce #(conj %1 (nth tuple %2))
-                          [] attr-columns))]
+                  (reduce #(conj %1 (%2 tuple))
+                          [] val-accessors))]
     (Table. aliases (map project tuples))))
 
