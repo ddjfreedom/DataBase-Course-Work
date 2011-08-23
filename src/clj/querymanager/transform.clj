@@ -64,18 +64,18 @@
         (java2cljmap  (.getConstant e))))
 (defmethod java2cljmap RangeConditionExp [e]
   (into [:RANGE
-         (not (.getIsNot e))]
+         (if (.getIsNot e) not identity)]
         (map java2cljmap [(.getParameter e)
                         (.getDownLimit e)
                         (.getUpLimit e)])))
 (defmethod java2cljmap ValueListInOrNotConditionExp [e]
   (conj [:IN
-         (not (.getIsNot e))
+         (if (.getIsNot e) not identity)
          (java2cljmap (.getParameter e))]
         (set (map-explist java2cljmap (.getValues e)))))
 (defmethod java2cljmap LikeConditionExp [e]
   [:LIKE
-   (not (.getIsNot e))
+   (if (.getIsNot e) not identity)
    (java2cljmap (.getParameter e))
    (java2cljmap (.getPattern e))])
 (defmethod java2cljmap IsNotNullConditionExp [e]
