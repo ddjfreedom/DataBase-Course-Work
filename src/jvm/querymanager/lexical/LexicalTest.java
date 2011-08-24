@@ -77,7 +77,7 @@ public class LexicalTest {
 			symnames[sym.ESCAPE] = "ESCAPE";
 			symnames[sym.PRIMARY] = "PRIMARY";
 			symnames[sym.KEY] = "KEY";
-			symnames[sym.REFERENCE] = "REFERENCE";
+			symnames[sym.REFERENCES] = "REFERENCE";
 			symnames[sym.JOIN] = "JOIN";
 			symnames[sym.NOT] = "NOT";
 			symnames[sym.NULL] = "NULL";

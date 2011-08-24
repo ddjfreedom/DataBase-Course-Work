@@ -232,7 +232,7 @@ orderByList ::= ORDER BY fieldID:f {:RESULT = new OrderExp(f, null);:}
 insertExp ::= INSERT INTO ID:i VALUES LPAREN valueList:vl RPAREN {:RESULT = new ConstantInsertExp(i, null, vl);:}
 				| INSERT INTO ID:i LPAREN fieldIDList:fl RPAREN VALUES LPAREN valueList:vl RPAREN {:RESULT = new ConstantInsertExp(i, fl, vl);:}
 				| INSERT INTO ID:i VALUES queryExp:q {:RESULT = new QueryInsertExp(i, null, q);:}
-				| INSERT INTO ID:i LPAREN fieldIDList:fl RPAREN VALUES queryExp {:RESULT = new QueryInsertExp(i, fl, q);:}
+				| INSERT INTO ID:i LPAREN fieldIDList:fl RPAREN VALUES queryExp:q {:RESULT = new QueryInsertExp(i, fl, q);:}
 				;
 fieldIDList ::= fieldID:f {:RESULT = new ParameterExpList(f, null);:}
 				| fieldID:f COMMA fieldIDList:fl {:RESULT = new ParameterExpList(f, fl);:}
@@ -243,14 +243,14 @@ updateExp ::= UPDATE ID:i SET assignmentExpList:al whereList:wl {:RESULT = new U
 assignmentExpList ::= assignmentExp:a {:RESULT = new AssignmentExpList(a, null);:}
 				| assignmentExp:a COMMA assignmentExpList:al {:RESULT = new AssignmentExpList(a, al);:}
 				;
-				
+
 assignmentExp ::= fieldID:f EQ NUMBER:n {:RESULT = new ConstantAssignmentExp(f, new Constant(n));:}
 				| fieldID:f EQ STRING:s {:RESULT = new ConstantAssignmentExp(f, new Constant(s));:}
 				| fieldID:f EQ mathExp:m {:RESULT = new ExpressionAssignmentExp(f, m);:}
 				;
 
 deleteExp ::= DELETE FROM relation:r whereList:wl {:RESULT = new DeleteExp(r, wl);:}
-				;				
+				;
 
 createExp ::= CREATE TABLE ID:i LPAREN createElementExpList:cl RPAREN {:RESULT = new CreateExp(i,cl);:}
 				;
@@ -271,8 +271,8 @@ dataType ::= SMALLINT {:RESULT = new ElementDataType(Exp.DataType.SMALLINT, 0);:
 				| DATE {:RESULT = new ElementDataType(Exp.DataType.DATE, 0);:}
 				| TIME {:RESULT = new ElementDataType(Exp.DataType.TIME, 0);:}
 				;
-				
-restrictExp ::= 
+
+restrictExp ::=
 				| UNIQUE {:RESULT = Exp.Restrict.UNIQUE;:}
 				| PRIMARY KEY {:RESULT = Exp.Restrict.PRIMARYKEY;:}
 				;
