@@ -36,4 +36,18 @@ public abstract class Exp {
 		ASC,
 		DESC
 	}
+	public static enum DataType{
+		INT,
+		CHAR,
+		VARCHAR,
+		SMALLINT,
+		REAL,
+		FLOAT,
+		DATE,
+		TIME
+	}
+	public static enum Restrict{
+		UNIQUE,
+		PRIMARYKEY
+	}
 }

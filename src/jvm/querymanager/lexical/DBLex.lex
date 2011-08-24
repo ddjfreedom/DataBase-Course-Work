@@ -69,7 +69,7 @@ doubleNum=[0-9]+[\.][0-9]+
 <YYINITIAL>escape		{return tok(sym.ESCAPE,null);}
 <YYINITIAL>primary		{return tok(sym.PRIMARY,null);}
 <YYINITIAL>key		{return tok(sym.KEY,null);}
-<YYINITIAL>reference		{return tok(sym.REFERENCE,null);}
+<YYINITIAL>references		{return tok(sym.REFERENCES,null);}
 <YYINITIAL>join		{return tok(sym.JOIN,null);}
 <YYINITIAL>not		{return tok(sym.NOT,null);}
 <YYINITIAL>null		{return tok(sym.NULL,null);}
@@ -136,7 +136,7 @@ doubleNum=[0-9]+[\.][0-9]+
 <YYINITIAL>ESCAPE		{return tok(sym.ESCAPE,null);}
 <YYINITIAL>PRIMARY		{return tok(sym.PRIMARY,null);}
 <YYINITIAL>KEY		{return tok(sym.KEY,null);}
-<YYINITIAL>REFERENCE		{return tok(sym.REFERENCE,null);}
+<YYINITIAL>REFERENCES		{return tok(sym.REFERENCES,null);}
 <YYINITIAL>JOIN		{return tok(sym.JOIN,null);}
 <YYINITIAL>NOT		{return tok(sym.NOT,null);}
 <YYINITIAL>NULL		{return tok(sym.NULL,null);}
@@ -166,6 +166,14 @@ doubleNum=[0-9]+[\.][0-9]+
 <YYINITIAL>TIME		{return tok(sym.TIME,null);}
 <YYINITIAL>ASC	{return tok(sym.ASC, null);}
 <YYINITIAL>DESC		{return tok(sym.DESC, null);}
+<YYINITIAL>smallint		{return tok(sym.SMALLINT, null);}
+<YYINITIAL>SMALLINT		{return tok(sym.SMALLINT, null);}
+<YYINITIAL>REAL		{return tok(sym.REAL, null);}
+<YYINITIAL>real		{return tok(sym.REAL, null);}
+<YYINITIAL>FLOAT		{return tok(sym.FLOAT, null);}
+<YYINITIAL>float		{return tok(sym.FLOAT, null);}
+<YYINITIAL>UNIGUE		{return tok(sym.UNIQUE, null);}
+<YYINITIAL>unique		{return tok(sym.UNIQUE, null);}
 
 
 <YYINITIAL>"*"		{return tok(sym.STAR,null);}
@@ -189,7 +197,7 @@ doubleNum=[0-9]+[\.][0-9]+
 
 
 <YYINITIAL>[a-zA-Z][a-zA-Z0-9_#]*	{return  tok(sym.ID,yytext());}
-<YYINITIAL>{doubleNum} {return tok(sym.DOUBLE, new Double(yytext()));}
+<YYINITIAL>{doubleNum} {return tok(sym.DOUBLENUMBER, new Double(yytext()));}
 <YYINITIAL>{digits}	{return tok(sym.NUMBER, new Integer(yytext()));}
 <YYINITIAL>(" "|\r\n|\t|\n)+ {}
 
