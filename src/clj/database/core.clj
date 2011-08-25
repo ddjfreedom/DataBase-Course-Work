@@ -4,5 +4,5 @@
   (:gen-class))
 
 (defn -main [& args]
-  (do (pprint (exec (parse (first args))))
+  (do (pprint (exec (parse (first args)) nil))
       (prn)))
