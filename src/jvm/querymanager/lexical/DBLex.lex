@@ -172,8 +172,16 @@ doubleNum=[0-9]+[\.][0-9]+
 <YYINITIAL>real		{return tok(sym.REAL, null);}
 <YYINITIAL>FLOAT		{return tok(sym.FLOAT, null);}
 <YYINITIAL>float		{return tok(sym.FLOAT, null);}
-<YYINITIAL>UNIGUE		{return tok(sym.UNIQUE, null);}
+<YYINITIAL>UNIQUE		{return tok(sym.UNIQUE, null);}
 <YYINITIAL>unique		{return tok(sym.UNIQUE, null);}
+<YYINITIAL>restrict		{return tok(sym.RESTRICT, null);}
+<YYINITIAL>RESTRICT		{return tok(sym.RESTRICT, null);}
+<YYINITIAL>CLUSTER		{return tok(sym.CLUSTER, null);}
+<YYINITIAL>cluster		{return tok(sym.CLUSTER, null);}
+<YYINITIAL>with		{return tok(sym.WITH, null);}
+<YYINITIAL>WITH		{return tok(sym.WITH, null);}
+<YYINITIAL>option		{return tok(sym.OPTION, null);}
+<YYINITIAL>OPTION		{return tok(sym.OPTION, null);}
 
 
 <YYINITIAL>"*"		{return tok(sym.STAR,null);}

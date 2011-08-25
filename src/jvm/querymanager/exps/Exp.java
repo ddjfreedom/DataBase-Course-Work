@@ -50,4 +50,13 @@ public abstract class Exp {
 		UNIQUE,
 		PRIMARYKEY
 	}
+	public static enum RestrictOrCascade{
+		RESTRICT,
+		CASCADE
+	}
+	public static enum UniqueOrCluster{
+		UNIQUE,
+		CLUSTER,
+		BOTH
+	}
 }

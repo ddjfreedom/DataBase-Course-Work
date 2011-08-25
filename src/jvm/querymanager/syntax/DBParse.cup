@@ -14,8 +14,8 @@ terminal	CREATE, UPDATE, ALTER, INSERT, UNIQUE, DELETE, SELECT, DROP, INDEX, CHE
 terminal	ASSERT, TABLE, DATABASE, VALUES, INTO, FROM, DISTINCT, LIKE, IN, VIEW, BETWEEN, COUNT;
 terminal	GROUP, HAVING, BY, ORDER, SET, SUM, AVG, WHERE, MAX, MIN, ESCAPE, PRIMARY, KEY;
 terminal	REFERENCES, JOIN, NOT, NULL, AS, ON, ALL, INTERSECT, EXCEPT, UNION, NATURAL, FULL, SCHEMA;
-terminal	OUTER, INNER, IS, CHAR, DATE, INT, VARCHAR, CASCADE, UNKNOWN, TRUE, FALSE, CROSS, TIME;
-terminal 	SMALLINT, REAL, FLOAT;
+terminal	OUTER, INNER, IS, CHAR, DATE, INT, VARCHAR, RESTRICT, CLUSTER, CASCADE, UNKNOWN, TRUE, FALSE, CROSS, TIME;
+terminal 	SMALLINT, REAL, FLOAT, WITH, OPTION;
 terminal	ANY, CONNECT, EXISTS, ASC, DESC;
 terminal	COMMA, COLON, SEMICOLON, LPAREN, RPAREN, DOT, PLUS, MINUS, STAR, DIVIDE, EQ, NEQ, LT, LE, GT, GE, AND, OR;
 terminal Integer	NUMBER;
@@ -32,7 +32,7 @@ nonterminal ConditionExpLists conditionLists;
 nonterminal ConditionExp condition;
 nonterminal TargetExp attribute;
 nonterminal FromExp relation;
-nonterminal dropExp, alterExp;
+nonterminal DropExp dropExp;
 nonterminal Exp.DisOrAll distinctOrAll;
 nonterminal String nickName;
 nonterminal ParameterExp columnID, fieldID;
@@ -43,7 +43,6 @@ nonterminal OptionalExp optionalList;
 nonterminal WhereExp whereList;
 nonterminal CompareConditionExp compareExp;
 nonterminal Exp.CompareOp compareOp;
-nonterminal Exp.AnyOrAll anyOrAll;
 nonterminal RangeConditionExp rangeExp;
 nonterminal InOrNotConditionExp inOrNotExp;
 nonterminal ConstantList valueList;
@@ -52,7 +51,6 @@ nonterminal IsNotNullConditionExp nullExp;
 nonterminal ExistConditionExp notExistExp;
 nonterminal GroupExp groupByList;
 nonterminal OrderExp orderByList;
-nonterminal AscOeDesc ascOrDesc;
 nonterminal InsertExp insertExp;
 nonterminal ParameterExpList fieldIDList;
 nonterminal UpdateExp updateExp;
@@ -63,7 +61,13 @@ nonterminal CreateExp createExp;
 nonterminal TableElementExpList createElementExpList;
 nonterminal TableElementTypeExp createElementExp;
 nonterminal ElementDataType dataType;
+nonterminal CreateIndexExp createIndexExp;
+nonterminal IndexElementExpList indexElementList;
+nonterminal IndexElementExp indexElement;
+nonterminal DropIndexExp dropIndexExp;
 nonterminal Exp.Restrict restrictExp;
+nonterminal CreateViewExp createViewExp;
+nonterminal DropViewExp dropViewExp;
 
 
 precedence left SEMICOLON;
@@ -84,7 +88,12 @@ instruction ::= queryExp:q {:RESULT = q;:}
 				| createExp:c {:RESULT = c;:}
 				| insertExp:i {:RESULT = i;:}
 				| deleteExp:d {:RESULT = d;:}
-				| alterExp | dropExp;
+				| dropExp:d {:RESULT = d;:}
+				| createIndexExp:c {:RESULT = c;:}
+				| dropIndexExp:d {:RESULT = d;:}
+				| createViewExp:c {:RESULT = c;:}
+				| dropViewExp:d {:RESULT = d;:}
+				;
 
 queryExp ::= selFrom:sf optionalList:op {:RESULT = new QueryExp(sf, op);:}
 				| LPAREN queryExp:qe RPAREN {:RESULT = qe;:}
@@ -275,4 +284,37 @@ dataType ::= SMALLINT {:RESULT = new ElementDataType(Exp.DataType.SMALLINT, 0);:
 restrictExp ::=
 				| UNIQUE {:RESULT = Exp.Restrict.UNIQUE;:}
 				| PRIMARY KEY {:RESULT = Exp.Restrict.PRIMARYKEY;:}
+				;
+				
+dropExp ::= DROP TABLE ID:i {:RESULT = new DropExp(i, null);:}
+				| DROP TABLE ID:i RESTRICT {:RESULT = new DropExp(i, Exp.RestrictOrCascade.RESTRICT);:}
+				| DROP TABLE ID:i CASCADE {:RESULT = new DropExp(i, Exp.RestrictOrCascade.CASCADE);:}
+				;	
+				
+createIndexExp ::=  CREATE INDEX ID:i1 ON ID:i2 LPAREN indexElementList:il RPAREN {:RESULT = new CreateIndexExp(null, i1, i2, il);:}
+				| CREATE UNIQUE INDEX ID:i1 ON ID:i2 LPAREN indexElementList:il RPAREN {:RESULT = new CreateIndexExp(Exp.UniqueOrCluster.UNIQUE, i1, i2, il);:}
+				| CREATE CLUSTER INDEX ID:i1 ON ID:i2 LPAREN indexElementList:il RPAREN {:RESULT = new CreateIndexExp(Exp.UniqueOrCluster.CLUSTER, i1, i2, il);:}
+				| CREATE UNIQUE CLUSTER INDEX ID:i1 ON ID:i2 LPAREN indexElementList:il RPAREN {:RESULT = new CreateIndexExp(Exp.UniqueOrCluster.BOTH, i1, i2, il);:}
+				;
+
+indexElementList ::= indexElement:i {:RESULT = new IndexElementExpList(i, null);:}
+				| indexElement:i COMMA indexElementList:il {:RESULT = new IndexElementExpList(i, il);:}
+				;
+
+indexElement ::= ID:i {:RESULT = new IndexElementExp(i, null);:}
+				| ID:i ASC {:RESULT = new IndexElementExp(i, Exp.AscOrDesc.ASC);:}
+				| ID:i DESC {:RESULT = new IndexElementExp(i, Exp.AscOrDesc.DESC);:}
+				;
+			
+dropIndexExp ::= DROP INDEX ID:i {:RESULT = new DropIndexExp(i);:}
+				;
+				
+createViewExp ::= CREATE VIEW ID:i AS queryExp:q {:RESULT = new CreateViewExp(i, null, q, false);:}
+				| CREATE VIEW ID:i LPAREN fieldIDList:fl RPAREN AS queryExp:q  {:RESULT = new CreateViewExp(i, fl, q, false);:}
+				| CREATE VIEW ID:i AS queryExp:q WITH CHECK OPTION {:RESULT = new CreateViewExp(i, null, q, true);:}
+				| CREATE VIEW ID:i LPAREN fieldIDList:fl RPAREN AS queryExp:q WITH CHECK OPTION {:RESULT = new CreateViewExp(i, fl, q, true);:}
+				;
+				
+dropViewExp ::= DROP VIEW ID:i {:RESULT = new DropViewExp(i, false);:}
+				| DROP VIEW ID:i CASCADE {:RESULT = new DropViewExp(i, true);:}
 				;
