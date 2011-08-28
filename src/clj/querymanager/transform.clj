@@ -26,6 +26,13 @@
 (defmulti java2cljmap
   "Convert java class hierarchy to clojure data structure"
   class)
+(defmethod java2cljmap SetQueryExp [e]
+  (let [setop (.getOption e)]
+    [:SET (cond (= setop SetQueryExp/EXCEPT) :EXCEPT
+                (= setop SetQueryExp/UNION) :UNION
+                (= setop SetQueryExp/INTERSECT) :INTERSECT)
+     (-> e .getQuery1 java2cljmap)
+     (-> e .getQuery2 java2cljmap)]))
 (defmethod java2cljmap QueryExp [e]
   (let [{:keys [select from] :as selfrom} (java2cljmap (.getSelectFrom e))
         {:keys [where group order] :as wgo}

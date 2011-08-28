@@ -3,7 +3,8 @@
         [disk.tablemanager :only [create-table attr? val-accessor]]
         [clojure.contrib.combinatorics :only [cartesian-product]]
         [clojure.contrib.seq-utils :only [separate]])
-  (:require [clojure.string :only [replace]])
+  (:require [clojure.string :only [replace]]
+            [clojure.set :only [difference intersection union]])
   (:import [querymanager.lexical Yylex]
            [querymanager.syntax DBParser sym]
            [java.io FileInputStream]
@@ -68,6 +69,10 @@ Ohterwise, throw an exception"
    :GT #(> (compare %1 %2) 0),
    :LE #(<= (compare %1 %2) 0),
    :GE #(>= (compare %1 %2) 0)})
+(def set-ops
+  {:EXCEPT clojure.set/difference,
+   :INTERSECT clojure.set/intersection,
+   :UNION clojure.set/union})
 (declare exec)
 (defmulti selection-test
   (fn [[test-type & _] tuples header outer-env]
@@ -178,4 +183,9 @@ Ohterwise, throw an exception"
                   (reduce #(conj %1 (%2 tuple))
                           [] val-accessors))]
     (Table. nil aliases (map project tuples))))
-
+(defmethod exec :SET [[_ set-op q1 q2] outer-env]
+  (let [{h1 :header t1 :tuples} (exec q1 outer-env)
+        {h2 :header t2 :tuples} (exec q2 outer-env)]
+    (if (= (vec h1) (vec h2))
+      (Table. nil h1 (vec ((set-ops set-op) (set t1) (set t2))))
+      (throw (Exception. "Invalid set operation")))))
