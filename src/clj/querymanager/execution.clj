@@ -147,6 +147,25 @@ Ohterwise, throw an exception"
           [tuples []]
           and-conds))
 
+(defn- grouping [group-attr tuples header outer-env]
+  (if (nil? group-attr)
+    [tuples]
+    (let [attr-accessor (val-accessor group-attr header outer-env)]
+      (vals (group-by attr-accessor tuples)))))
+(def aggr-ops
+  {:AVG #(/ (reduce + %) (count %)),
+   :SUM #(reduce + %),
+   :MIN #(apply min %),
+   :MAX #(apply max %),
+   :COUNT count})
+(defn- projecting [attr tuples header outer-env]
+  (cond (= (first attr) :AGGR)
+        (let [[op qualifier attr] (second attr)
+              acc (val-accessor attr header outer-env)]
+          [((aggr-ops op) (map acc tuples))])
+        (attr? attr)
+        (let [acc (val-accessor attr header outer-env)]
+          (map acc tuples))))
 (defmulti exec (fn [exp outer-env] (first exp)))
 (defmethod exec :from [[_ & ts] outer-env]
   (let [tables
@@ -171,18 +190,22 @@ Ohterwise, throw an exception"
                     conditions)]
         (Table. nil header tuples))
       table)))
-(defmethod exec :query [[_ {:keys [select from where]}] outer-env]
+(defmethod exec :query [[_ {:keys [select from where groupby]}] outer-env]
   (let [{:keys [header tuples]} (exec [:where where [:from from]] outer-env)
         [attrs aliases] (reduce (fn [[r1 r2] [a1 a2]]
                                   [(conj r1 a1)
                                    (conj r2 (if a2 [nil a2] a1))])
                                 [[] []]
-                                select)
-        val-accessors (map  #(val-accessor % header outer-env) attrs)
-        project (fn [tuple]
-                  (reduce #(conj %1 (%2 tuple))
-                          [] val-accessors))]
-    (Table. nil aliases (map project tuples))))
+                                select)]
+    (loop [groups (grouping (first groupby) tuples header outer-env)
+           res []]
+      (if (seq groups)
+        (let [tuples (first groups)]
+          (recur (rest groups)
+                 (conj res (apply map (fn [& args] (vec args))
+                                  (map #(projecting % tuples header outer-env)
+                                       attrs)))))
+        (Table. nil aliases (apply concat res))))))
 (defmethod exec :SET [[_ set-op q1 q2] outer-env]
   (let [{h1 :header t1 :tuples} (exec q1 outer-env)
         {h2 :header t2 :tuples} (exec q2 outer-env)]

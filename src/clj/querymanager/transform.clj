@@ -46,7 +46,8 @@
   [(java2cljmap (.getParameter e))
    (.getAlias e)])
 (defmethod java2cljmap AggregationTargetExp [e]
-  [(java2cljmap (.getAggregationExp e))
+  [[:AGGR
+    (java2cljmap (.getAggregationExp e))]
    (.getAlias e)])
 (defmethod java2cljmap ExpressionTargetExp [e]
   [(java2cljmap (.getMathExp e))
@@ -63,7 +64,7 @@
         order (.getOrder e)]
     {:where (when where
               (map-explist #(map-explist java2cljmap %) (.getConditions where)))
-     :group (when group (java2cljmap group))
+     :groupby (when group (java2cljmap group))
      :order (when order (java2cljmap order))}))
 (defmethod java2cljmap ParameterCompareConditionExp [e]
   (vec (map java2cljmap [(.getCompareOp e)
