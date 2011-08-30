@@ -191,21 +191,24 @@ Ohterwise, throw an exception"
         (Table. nil header tuples))
       table)))
 (defmethod exec :query [[_ {:keys [select from where groupby]}] outer-env]
-  (let [{:keys [header tuples]} (exec [:where where [:from from]] outer-env)
-        [attrs aliases] (reduce (fn [[r1 r2] [a1 a2]]
-                                  [(conj r1 a1)
-                                   (conj r2 (if a2 [nil a2] a1))])
-                                [[] []]
-                                select)]
-    (loop [groups (grouping (first groupby) tuples header outer-env)
-           res []]
-      (if (seq groups)
-        (let [tuples (first groups)]
-          (recur (rest groups)
-                 (conj res (apply map (fn [& args] (vec args))
-                                  (map #(projecting % tuples header outer-env)
-                                       attrs)))))
-        (Table. nil aliases (apply concat res))))))
+  (let [{:keys [header tuples] :as table}
+        (exec [:where where [:from from]] outer-env)]
+    (if (some #(= % :STAR) select)
+      table
+      (let [[attrs aliases] (reduce (fn [[r1 r2] [a1 a2]]
+                                       [(conj r1 a1)
+                                        (conj r2 (if a2 [nil a2] a1))])
+                                     [[] []]
+                                     select)]
+        (loop [groups (grouping (first groupby) tuples header outer-env)
+               res []]
+          (if (seq groups)
+            (let [tuples (first groups)]
+              (recur (rest groups)
+                     (conj res (apply map (fn [& args] (vec args))
+                                      (map #(projecting % tuples header outer-env)
+                                           attrs)))))
+            (Table. nil aliases (apply concat res))))))))
 (defmethod exec :SET [[_ set-op q1 q2] outer-env]
   (let [{h1 :header t1 :tuples} (exec q1 outer-env)
         {h2 :header t2 :tuples} (exec q2 outer-env)]

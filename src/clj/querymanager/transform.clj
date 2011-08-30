@@ -43,8 +43,11 @@
         from (map-explist java2cljmap (.getFromList e))]
     {:select targets, :from from}))
 (defmethod java2cljmap ParameterTargetExp [e]
-  [(java2cljmap (.getParameter e))
-   (.getAlias e)])
+  (let [para (.getParameter e)]
+    (if (= (.getParameter para) ParameterExp/STAR)
+      :STAR
+      [(java2cljmap (.getParameter e))
+       (.getAlias e)])))
 (defmethod java2cljmap AggregationTargetExp [e]
   [[:AGGR
     (java2cljmap (.getAggregationExp e))]
