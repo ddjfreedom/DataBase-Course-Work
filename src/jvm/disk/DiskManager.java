@@ -1,10 +1,7 @@
 package disk;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,9 +19,10 @@ public class DiskManager {
 	private static int freePage = 0;
 	private static int dirtyPage = -1;
 	private static byte [] dp = intToByte(dirtyPage);
-	private static int finalPage = -2;	
-	private static int creatFileEntry =0;
-	private int [] pageAccessTable = new int [tableLength];
+	private static int finalPage = -2;
+	private static int fileEntryPageNum = 200;
+	private static int creatFileFlag =0;
+	private int [] pageAllocateTable = new int [tableLength];
 	private HashMap <String,Integer> fileEntry = new HashMap <String, Integer>();
 	private ArrayList <String> openFile = new ArrayList <String>();
 
@@ -36,6 +34,7 @@ public class DiskManager {
 		b[3] = (byte) (i >> 24);
 		return b;
 	}
+	
 	public static int byteToInt (byte []b){
 		int i = 0xff & b[0];
 		i |= (b[1] << 8) & 0xff00;
@@ -43,6 +42,7 @@ public class DiskManager {
 		i |= (b[3] << 24) & 0xff000000;
 		return i;
 	}
+	
 	public byte[] splitStringToByte (StringBuffer s, int from){
 		byte [] b = new byte[pageSize];
 		if((s.length()-from)<=pageSize){
@@ -60,7 +60,7 @@ public class DiskManager {
 		int flag;
 		int freePageNum = -1;
 		for (int i = 0; i< tableLength; i++){
-			flag = pageAccessTable[i];
+			flag = pageAllocateTable[i];
 			if(flag == 0){
 				freePageNum = i;
 				break;
@@ -90,7 +90,6 @@ public class DiskManager {
 			e.printStackTrace();
 		}
 	}
-	
 	public void readPage(int pageNum, byte page[]){
 		try {
 			disk.seek(pageNum*pageSize);
@@ -102,20 +101,20 @@ public class DiskManager {
 	}
 	
 	public void markPage(int pageNum,int mark){
-		pageAccessTable[pageNum] = mark;
+		pageAllocateTable[pageNum] = mark;
 	}
 	
-	public void createDisk(String diskName){
+	public void createDisk(String diskName){ //initialize the disk
 		try {
 			disk = new RandomAccessFile(diskName,"rw");
 			byte []diskInit = new byte [diskSize];
-			
 			Arrays.fill(diskInit, zero); 
 			disk.seek(0);
 			disk.write(diskInit); //fill the disk with zero
 			disk.seek(0);
-			for (int i = 0; i< tableSize/pageSize; i++){
-				disk.write(dp, 0, 4);  //pageAccessTable occupies 200 pages
+			
+			for (int i = 0; i< tableSize/pageSize+1; i++){
+				disk.write(dp, 0, 4);  //table occupies 200 pages and fileEntry.sys occupies 1 pages at first
 			}			
 			
 		} catch (IOException e) {
@@ -123,8 +122,8 @@ public class DiskManager {
 			e.printStackTrace();
 		}
 	}
-
-	public void openDB(){
+	
+	public void openDB(){ //read pageAllocateTable and FileEntry from disk
 		try {
 			disk.seek(0);
 			int flag;
@@ -132,14 +131,15 @@ public class DiskManager {
 			for (int i = 0; i< tableLength; i++){
 				disk.read(pageFlag, 0, 4);   //read Table from disk to memory
 				flag = byteToInt(pageFlag);
-				pageAccessTable[i]=flag;  
+				pageAllocateTable[i]=flag;  
 			}	
-			if(creatFileEntry ==0){
-				createFile("fileEntry.sys"); //creat fileEntry as a systemfile 
-				creatFileEntry =1;
+			if(creatFileFlag ==0){
+				fileEntry.put("fileEntry.sys", fileEntryPageNum);
+				markPage(fileEntryPageNum,finalPage);   // store fileEntry map as a file
+				creatFileFlag =1;
 			}
 			StringBuffer sb = new StringBuffer();
-			sb=readFile("fileEntry.sys");	//read fileEntry from disk to memory
+			sb=readFile("fileEntry.sys");
 			String fileName = new String();
 			int pageNum = 0;
 			String[]ss=sb.toString().split("/");
@@ -150,7 +150,7 @@ public class DiskManager {
 				else{
 					pageNum=Integer.parseInt(ss[i]);
 				}
-				fileEntry.put(fileName, pageNum);  //use hashmap to accelerate search
+				fileEntry.put(fileName, pageNum);
 			}
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -158,19 +158,20 @@ public class DiskManager {
 		}
 	}
 
-	public void closeDB(){
+	public void closeDB(){ //write pageAllocateTable and FileEntry to disk
 		try {
 			disk.seek(0);
 			int flag;
 			byte[] pageFlag = new byte[4];
 			for (int i = 0; i< tableLength; i++){
-				flag = pageAccessTable[i];
+				flag = pageAllocateTable[i];
 				pageFlag= intToByte(flag);
 				disk.write(pageFlag, 0, 4);   //write Table from memory to disk
 			}
 			StringBuffer sb = new StringBuffer();
 			String fileName =new String();
 			String pageNum =new String();
+			
 			Iterator it = fileEntry.entrySet().iterator();   
 		    while (it.hasNext()) {   
 		    	Map.Entry entry = (Map.Entry) it.next();   
@@ -179,42 +180,52 @@ public class DiskManager {
 		        sb.append(fileName).append("/").append(pageNum).append("/");
 		    }
 		    openFile("fileEntry.sys");
-			writeFile("fileEntry.sys",sb); //write FileEntry back to fileEntry.sys on disk
+			writeFile("fileEntry.sys",sb);
+			fileEntry.clear();
+			fileEntry.put("fileEntry.sys", 200); // fileEntry.sys always begin at 200 page
+			openFile.clear(); 
+			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-
+	
 	public boolean createFile(String fileName){
-		int pageEntry = -1;
-		pageEntry = getFreePageNum();  //find the fileEntryPage
-		fileEntry.put(fileName, pageEntry); //put to hashmap
-		markPage(pageEntry,finalPage);
-		if (pageEntry != -1)
-			return true;
-		else
+		if(fileEntry.containsKey(fileName)){
+			System.out.println("CAN'T CREAT, RENAME THE FILE!");
 			return false;
+		}
+		else{
+			int pageEntry = -1;
+			pageEntry = getFreePageNum();   //find the file page entry
+			fileEntry.put(fileName, pageEntry);
+			markPage(pageEntry,finalPage);
+			if (pageEntry != -1)
+				return true;
+			else
+				return false;
+		}
+		
 	}
 	
 	public void openFile(String fileName){
 		if(fileEntry.containsKey(fileName)){
-			openFile.add(fileName);
+			openFile.add(fileName);  // add file to openfile list. Only open file cant be written
 		}
 		else
-			System.out.println("FILE NOT EXIST!");
+			System.out.println("CAN'T OPEN "+fileName+" , FILE NOT EXIST!");
+	
 	}
 	
-	
-	
 	public void writeFile(String fileName, StringBuffer content){
-		if(openFile.contains(fileName)){
+		if(openFile.contains(fileName)&&fileEntry.containsKey(fileName)){
 			int pageEntry = fileEntry.get(fileName);
 			int nextEntry = pageEntry;
 			int prevEntry = pageEntry;
-			for(int i = 0; i < content.length(); i = i +pageSize){ //write to disk in page size
+			for(int i = 0; i < content.length(); i = i +pageSize){
 				byte [] page = new byte[pageSize];
-				page = splitStringToByte(content,i); // split content into page size
+				page = splitStringToByte(content,i);
 				if(i == 0){
 					writePage(pageEntry,page);
 					markPage(pageEntry,dirtyPage);
@@ -230,7 +241,7 @@ public class DiskManager {
 			markPage(nextEntry,finalPage);
 		}
 		else
-			System.out.println("FILE NOT OPEN!");
+			System.out.println("CAN'T WRITE "+fileName);
 	}
 	
 	public StringBuffer readFile(String fileName){
@@ -240,19 +251,19 @@ public class DiskManager {
 			int nextEntry = pageEntry;
 			byte [] page = new byte[pageSize];
 			String s;
-			for(int i = pageEntry; nextEntry != finalPage;){ //read file in page size
+			for(int i = pageEntry; nextEntry != finalPage;){  // read file in page size
 				readPage(nextEntry, page);
 				s = new String(page);
 				rs.append(s);
-				nextEntry = pageAccessTable[i];
+				nextEntry = pageAllocateTable[i];
 				i = nextEntry;
 			}
 			return rs;
 		}
 		else{
-			System.out.println("FILE NOT EXIST!");
+			System.out.println("FILE "+fileName+" NOT EXIST, CAN'T READ!");
 			rs = null;
-			return rs; //means error
+			return rs; //rs equals null means error
 		}
 	}
 	
@@ -263,64 +274,19 @@ public class DiskManager {
 			int nextEntry = pageEntry;
 			for(int i = pageEntry; nextEntry != finalPage;){
 				tmp.add(nextEntry);
-				cleanPage(nextEntry);
-				nextEntry = pageAccessTable[i];
+//				cleanPage(nextEntry);
+				nextEntry = pageAllocateTable[i];
 				i = nextEntry;
 			}
 			for(int i = 0; i< tmp.size(); i ++){
-				markPage(tmp.get(i), freePage); // mark all the delete pages free
+				markPage(tmp.get(i), freePage);  //mark all the delete pages free
 			}
+			fileEntry.remove(fileName);//remove from hashmap fileEntry
 		}
 		else
-			System.out.println("FILE NOT EXIST!");
+			System.out.println("CAN'T DELETE "+fileName+" , FILE NOT EXIST!");
 	}
 	
-
-	
-/*	public static void main(String args[]) throws IOException{
-		DiskManager dm = new DiskManager();
-		
-		dm.createDisk("abc");
-		dm.openDB();
-		dm.createFile("a");
-//		dm.closeDB();
-//		
-//		System.out.println("r "+dm.readFile("fileEntry"));
-//		dm.openDB();
-		
-//		dm.readFile("a");
-		dm.openFile("a");
-		StringBuffer test =new StringBuffer("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddddddddddddddddddddddddddddddddddddddddddddeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddddddddddddddddddddddddddddddddddddddddddddeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddddddddddddddddddddddddddddddddddddddddddddeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddddddddddddddddddddddddddddddddddddddddddddeeeeeeeeeeeeeeeeeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddddddddddddddddddddddddddddddddddddddddddddeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddddddddddddddddddddddddddddddddddddddddddddeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddddddddddddddddddddddddddddddddddddddddddddeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbccccccccccccccccccccccccccccccccccccccccccccccccccdddddddddddddddddddddddddddddddddddddddddddddddddddeeeeeeeeeeeezzzzzzzzzzzzzzzzzzzzzzqqq");
-//		StringBuffer test = new StringBuffer("abc");
-		System.out.println(test.length());
-		dm.writeFile("a",test );
-		StringBuffer s = dm.readFile("a");
-		System.out.println(s);
-
-		dm.createFile("b");
-		dm.openFile("b");
-		StringBuffer t = new StringBuffer("abc");
-		dm.writeFile("b", t);
-		StringBuffer ss = dm.readFile("b");
-		System.out.println("@@@@"+ss);
-	
-//		dm.openDB();
-//		System.out.println(dm.getFreePageNum());
-//		System.out.println(s.equals(test));
-//		byte []b = new byte[4];
-//		b =  intToByte (-2);
-//		byte []page = new byte [1024];
-//		for (int i=0;i*4<1024;i++){
-//			
-//		}
-		System.out.println("da "+dm.pageAccessTable[200]);
-		System.out.println("da "+dm.pageAccessTable[201]);
-		System.out.println("da "+dm.pageAccessTable[202]);
-		System.out.println("da "+dm.pageAccessTable[203]);
-		dm.deleteFile("a");
-
-		System.out.println(dm.getFreePageNum());
-	}
-*/
-
 }
+
+	
