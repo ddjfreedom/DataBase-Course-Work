@@ -17,4 +17,16 @@ public class TableElementTypeExp extends Exp {
 		return null;
 	}
 
+	public String getParameterName() {
+		return parameterName;
+	}
+
+	public ElementDataType getElementType() {
+		return elementType;
+	}
+
+	public Restrict getRestrict() {
+		return restrict;
+	}
+
 }

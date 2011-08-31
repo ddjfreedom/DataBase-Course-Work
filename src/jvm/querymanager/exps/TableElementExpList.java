@@ -15,4 +15,19 @@ public class TableElementExpList extends Exp {
 		return null;
 	}
 
+	public TableElementTypeExp getHead() {
+		return head;
+	}
+
+	public void setHead(TableElementTypeExp head) {
+		this.head = head;
+	}
+
+	public TableElementExpList getTail() {
+		return tail;
+	}
+
+	public void setTail(TableElementExpList tail) {
+		this.tail = tail;
+	}
 }

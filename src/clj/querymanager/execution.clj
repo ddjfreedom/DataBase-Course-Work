@@ -1,6 +1,6 @@
 (ns querymanager.execution
   (:use [querymanager.transform :only [java2cljmap transform]]
-        [disk.tablemanager :only [create-table attr? val-accessor]]
+        [disk.tablemanager :only [read-table attr? val-accessor create-table]]
         [clojure.contrib.combinatorics :only [cartesian-product]]
         [clojure.contrib.seq-utils :only [separate]])
   (:require [clojure.string :only [replace]]
@@ -33,11 +33,15 @@
   ([file-name] (parse file-name nil)))
 
 (defn table-product [tables]
-  (let [headers (map #(:header %) tables)
+  (let [[headers types] (map #(map % tables) [:header :type])
         tuples  (map (fn [t] (apply concat t))
                      (apply cartesian-product
                             (map #(:tuples %) tables)))]
-    (Table. nil (apply concat headers) tuples)))
+    (Table. nil
+            (apply concat headers)
+            (apply concat types)
+            nil
+            tuples)))
 
 (defn- build-regex
   "Builds a regex from SQL pattern string s"
@@ -172,14 +176,14 @@ Ohterwise, throw an exception"
         (apply map (fn [t]
                      (cond (instance? Table t) t
                            (t :table)
-                           (create-table (t :table) (t :alias))
+                           (read-table (t :table) (t :alias))
                            (t :query)
-                           (create-table (exec (t :query) outer-env)
+                           (read-table (exec (t :query) outer-env)
                                          (t :alias))))
                ts)]
     (table-product tables)))
 (defmethod exec :where [[_ conditions table] outer-env]
-  (let [{:keys [tuples header] :as table} (exec table outer-env)]
+  (let [{:keys [tuples header type] :as table} (exec table outer-env)]
     (if conditions
       (let [[tuples]
             (reduce (fn [res and-c]
@@ -188,7 +192,7 @@ Ohterwise, throw an exception"
                         [(concat (first res) p) f]))
                     [[] tuples]
                     conditions)]
-        (Table. nil header tuples))
+        (assoc table :tuples tuples))
       table)))
 (defmethod exec :query [[_ {:keys [select from where groupby]}] outer-env]
   (let [{:keys [header tuples] :as table}
@@ -208,10 +212,13 @@ Ohterwise, throw an exception"
                      (conj res (apply map (fn [& args] (vec args))
                                       (map #(projecting % tuples header outer-env)
                                            attrs)))))
-            (Table. nil aliases (apply concat res))))))))
+            (Table. nil aliases nil nil (apply concat res))))))))
 (defmethod exec :SET [[_ set-op q1 q2] outer-env]
-  (let [{h1 :header t1 :tuples} (exec q1 outer-env)
+  (let [{h1 :header t1 :tuples type1 :type} (exec q1 outer-env)
         {h2 :header t2 :tuples} (exec q2 outer-env)]
     (if (= (vec h1) (vec h2))
-      (Table. nil h1 (vec ((set-ops set-op) (set t1) (set t2))))
+      (Table. nil h1 type1 nil (vec ((set-ops set-op) (set t1) (set t2))))
       (throw (Exception. "Invalid set operation")))))
+
+(defmethod exec :createtable [[_ name attrs] _]
+  (create-table name attrs))

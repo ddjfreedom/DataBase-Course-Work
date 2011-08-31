@@ -13,5 +13,16 @@ public class CreateExp extends Exp {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	public String getTableName() {
+		return tableName;
+	}
+	public void setTableName(String tableName) {
+		this.tableName = tableName;
+	}
+	public TableElementExpList getElements() {
+		return elements;
+	}
+	public void setElements(TableElementExpList elements) {
+		this.elements = elements;
+	}
 }
