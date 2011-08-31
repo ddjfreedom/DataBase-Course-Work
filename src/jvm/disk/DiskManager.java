@@ -1,5 +1,6 @@
 package disk;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
@@ -25,7 +26,18 @@ public class DiskManager {
 	private int [] pageAllocateTable = new int [tableLength];
 	private HashMap <String,Integer> fileEntry = new HashMap <String, Integer>();
 	private ArrayList <String> openFile = new ArrayList <String>();
-
+	private static DiskManager instance;
+	
+	private DiskManager(){};
+	
+	public static synchronized DiskManager getInstance(){
+		if(instance == null){
+			instance = new DiskManager();
+			instance.createDisk("DBDISK");
+		}
+		return instance;
+	}
+	
 	public static byte [] intToByte (int i){
 		byte[] b = new byte[4];
 		b[0] = (byte) i;
@@ -34,6 +46,7 @@ public class DiskManager {
 		b[3] = (byte) (i >> 24);
 		return b;
 	}
+	
 	
 	public static int byteToInt (byte []b){
 		int i = 0xff & b[0];
@@ -76,7 +89,6 @@ public class DiskManager {
 			disk.seek(pageNum*pageSize);
 			disk.write(fp);//fill page with zero
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
 	}
@@ -86,7 +98,6 @@ public class DiskManager {
 			disk.seek(pageNum*pageSize);
 			disk.write(page, 0, page.length);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -95,7 +106,6 @@ public class DiskManager {
 			disk.seek(pageNum*pageSize);
 			disk.read(page,0,pageSize);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -106,7 +116,9 @@ public class DiskManager {
 	
 	public void createDisk(String diskName){ //initialize the disk
 		try {
+			File file = new File(diskName);
 			disk = new RandomAccessFile(diskName,"rw");
+			if(file.exists()) return;
 			byte []diskInit = new byte [diskSize];
 			Arrays.fill(diskInit, zero); 
 			disk.seek(0);
@@ -118,7 +130,6 @@ public class DiskManager {
 			}			
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -153,7 +164,6 @@ public class DiskManager {
 				fileEntry.put(fileName, pageNum);
 			}
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
@@ -186,14 +196,12 @@ public class DiskManager {
 			openFile.clear(); 
 			
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 	
 	public boolean createFile(String fileName){
 		if(fileEntry.containsKey(fileName)){
-			System.out.println("CAN'T CREAT, RENAME THE FILE!");
 			return false;
 		}
 		else{
