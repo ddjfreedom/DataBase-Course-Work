@@ -3,7 +3,8 @@
         [disk.tablemanager :only [create-table attr? val-accessor]]
         [clojure.contrib.combinatorics :only [cartesian-product]]
         [clojure.contrib.seq-utils :only [separate]])
-  (:require [clojure.string :only [replace]])
+  (:require [clojure.string :only [replace]]
+            [clojure.set :only [difference intersection union]])
   (:import [querymanager.lexical Yylex]
            [querymanager.syntax DBParser sym]
            [java.io FileInputStream]
@@ -36,7 +37,7 @@
         tuples  (map (fn [t] (apply concat t))
                      (apply cartesian-product
                             (map #(:tuples %) tables)))]
-    (Table. (apply concat headers) tuples)))
+    (Table. nil (apply concat headers) tuples)))
 
 (defn- build-regex
   "Builds a regex from SQL pattern string s"
@@ -48,79 +49,169 @@
       (clojure.string/replace "%" "\\E.*\\Q")
       re-pattern))
 
-(let [comp-ops {:EQ =,:NEQ not=,
-                :LT #(< (compare %1 %2) 0),
-                :GT #(> (compare %1 %2) 0),
-                :LE #(<= (compare %1 %2) 0),
-                :GE #(>= (compare %1 %2) 0)}]
-  (defn- selection-test [condition tuples header]
-    (let [[test-type & args] condition]
-      (cond (test-type comp-ops)
-            (let [[acc1 acc2] (map #(val-accessor % header) args)
-                  op (test-type comp-ops)]
-              (separate #(op (acc1 %) (acc2 %)) tuples))
-            ;; Range has the form [:RANGE f attr lower upper]
-            ;; where f is either identity or not
-            (= test-type :RANGE)
-            (let [[f attr lower upper] args
-                  op (comp-ops :LT)
-                  [acc accl accu] (map #(val-accessor % header)
-                                       [attr lower upper])]
-              (separate #(f (and (op (accl lower) (acc %))
-                                 (op (acc %) (accu upper))))
-                        tuples))
-            ;; In has the form [:IN f attr val-set]
-            ;; where f is either identity or not
-            (= test-type :IN)
-            (let [[f attr valueset] args
-                  acc (val-accessor attr header)]
-              (separate #(f (valueset (acc %)))
-                        tuples))
-            (= test-type :LIKE)
-            (let [[f attr pattern] args
-                  acc (val-accessor attr header)]
-              (separate #(f (re-matches (build-regex pattern)
-                                        (acc %)))
-                        tuples))
-            :else (println "not implemented yet")))))
+(defn- check-get-val
+  "Check whether tuples contain only one tuple of a single attribute.
+If so, return the value of the attribute.
+Ohterwise, throw an exception"
+  [tuples]
+  (if (or (> (count tuples) 1)
+          (> (count (first tuples)) 1))
+    (throw (Exception. "Invalid subquery."))
+    (ffirst tuples)))
 
-(defn- selection-and [and-conds tuples header]
+(defn- extend-env [[header tuple] new-header new-tuple]
+  [(concat (if header header []) new-header)
+   (concat (if tuple tuple []) new-tuple)])
+
+(def comp-ops
+  {:EQ =,:NEQ not=,
+   :LT #(< (compare %1 %2) 0),
+   :GT #(> (compare %1 %2) 0),
+   :LE #(<= (compare %1 %2) 0),
+   :GE #(>= (compare %1 %2) 0)})
+(def set-ops
+  {:EXCEPT clojure.set/difference,
+   :INTERSECT clojure.set/intersection,
+   :UNION clojure.set/union})
+(declare exec)
+(defmulti selection-test
+  (fn [[test-type & _] tuples header outer-env]
+    (if (comp-ops test-type)
+      :COMP
+      test-type)))
+(defmethod selection-test :COMP
+  [[test-type & args] tuples header outer-env]
+  (let [[acc1 acc2] (map #(val-accessor % header outer-env) args)
+        op (test-type comp-ops)]
+    (separate #(op (acc1 %) (acc2 %)) tuples)))
+(defmethod selection-test :RANGE
+  [[_ f attr lower upper] tuples header outer-env]
+  (let [op (comp-ops :LT)
+        [acc accl accu] (map #(val-accessor % header outer-env)
+                             [attr lower upper])]
+    (separate #(f (and (op (accl lower) (acc %))
+                       (op (acc %) (accu upper))))
+              tuples)))
+(defmethod selection-test :IN
+  [[_ f attr valueset] tuples header outer-env]
+  (let [acc (val-accessor attr header outer-env)]
+    (separate #(f (valueset (acc %)))
+              tuples)))
+(defmethod selection-test :LIKE
+  [[_ f attr pattern] tuples header outer-env]
+  (let [acc (val-accessor attr header outer-env)]
+    (separate #(f (re-matches (build-regex pattern)
+                              (acc %)))
+              tuples)))
+(defmethod selection-test :QUERY
+  [[_ test-type & args] tuples header outer-env]
+  (cond (comp-ops test-type)
+        (let [[attr qualifier query] args
+              qualifier-f (cond (nil? qualifier)
+                                (fn [op val ts]
+                                  (op val (check-get-val ts)))
+                                (= qualifier :ALL)
+                                (fn [op val ts]
+                                  (every? #(op val %) (apply concat ts)))
+                                (= qualifier :ANY)
+                                (fn [op val ts]
+                                  (some #(op val %) (apply concat ts))))
+              acc (val-accessor attr header outer-env)
+              op (comp-ops test-type)]
+          (separate #(qualifier-f op
+                                  (acc %)
+                                  (:tuples (exec query
+                                                 (extend-env outer-env
+                                                             header %))))
+                    tuples))
+        (= test-type :RANGE)
+        (throw (Exception. "RANGE subquery not implemented yet"))
+        (= test-type :IN)
+        (let [[f attr query] args
+              acc (val-accessor attr header outer-env)
+              ]
+          (separate #(f ((set (map first
+                                   (:tuples (exec query
+                                                  (extend-env outer-env
+                                                              header %)))))
+                         (acc %)))
+                    tuples))))
+(defmethod selection-test :default
+  [_ _ _ _]
+  (println "not implemented yet"))
+
+(defn- selection-and [and-conds tuples header outer-env]
   (reduce (fn [res c]
-            (let [[p f] (selection-test c (first res) header)]
+            (let [[p f] (selection-test c (first res) header outer-env)]
               [p (concat (last res) f)]))
           [tuples []]
           and-conds))
 
-(defmulti exec first)
-(defmethod exec :product [e]
-  (let [tables (apply map (fn [t]
-                            (if (instance? Table t)
-                              t
-                              (create-table t)))
-                    (rest e))]
+(defn- grouping [group-attr tuples header outer-env]
+  (if (nil? group-attr)
+    [tuples]
+    (let [attr-accessor (val-accessor group-attr header outer-env)]
+      (vals (group-by attr-accessor tuples)))))
+(def aggr-ops
+  {:AVG #(/ (reduce + %) (count %)),
+   :SUM #(reduce + %),
+   :MIN #(apply min %),
+   :MAX #(apply max %),
+   :COUNT count})
+(defn- projecting [attr tuples header outer-env]
+  (cond (= (first attr) :AGGR)
+        (let [[op qualifier attr] (second attr)
+              acc (val-accessor attr header outer-env)]
+          [((aggr-ops op) (map acc tuples))])
+        (attr? attr)
+        (let [acc (val-accessor attr header outer-env)]
+          (map acc tuples))))
+(defmulti exec (fn [exp outer-env] (first exp)))
+(defmethod exec :from [[_ & ts] outer-env]
+  (let [tables
+        (apply map (fn [t]
+                     (cond (instance? Table t) t
+                           (t :table)
+                           (create-table (t :table) (t :alias))
+                           (t :query)
+                           (create-table (exec (t :query) outer-env)
+                                         (t :alias))))
+               ts)]
     (table-product tables)))
-(defmethod exec :selection [e]
-  (let [[conditions table] (rest e)
-        {:keys [tuples header] :as table} (exec table)]
+(defmethod exec :where [[_ conditions table] outer-env]
+  (let [{:keys [tuples header] :as table} (exec table outer-env)]
     (if conditions
-      (let [[tuples] (reduce (fn [res and-c]
-                       (let [[p f] (selection-and and-c (last res) header)]
-                         [(concat (first res) p) f]))
-                     [[] tuples]
-                     conditions)]
-        (Table. header tuples))
+      (let [[tuples]
+            (reduce (fn [res and-c]
+                      (let [[p f]
+                            (selection-and and-c (last res) header outer-env)]
+                        [(concat (first res) p) f]))
+                    [[] tuples]
+                    conditions)]
+        (Table. nil header tuples))
       table)))
-(defmethod exec :projection [e]
-  (let [[attrs table] (rest e)
-        [attrs aliases] (reduce (fn [[r1 r2] [a1 a2]]
-                                  [(conj r1 a1)
-                                   (conj r2 (if a2 [nil a2] a1))])
-                                [[] []]
-                                attrs)
-        {:keys [header tuples]} (exec table)
-        val-accessors (map  #(val-accessor % header) attrs)
-        project (fn [tuple]
-                  (reduce #(conj %1 (%2 tuple))
-                          [] val-accessors))]
-    (Table. aliases (map project tuples))))
-
+(defmethod exec :query [[_ {:keys [select from where groupby]}] outer-env]
+  (let [{:keys [header tuples] :as table}
+        (exec [:where where [:from from]] outer-env)]
+    (if (some #(= % :STAR) select)
+      table
+      (let [[attrs aliases] (reduce (fn [[r1 r2] [a1 a2]]
+                                       [(conj r1 a1)
+                                        (conj r2 (if a2 [nil a2] a1))])
+                                     [[] []]
+                                     select)]
+        (loop [groups (grouping (first groupby) tuples header outer-env)
+               res []]
+          (if (seq groups)
+            (let [tuples (first groups)]
+              (recur (rest groups)
+                     (conj res (apply map (fn [& args] (vec args))
+                                      (map #(projecting % tuples header outer-env)
+                                           attrs)))))
+            (Table. nil aliases (apply concat res))))))))
+(defmethod exec :SET [[_ set-op q1 q2] outer-env]
+  (let [{h1 :header t1 :tuples} (exec q1 outer-env)
+        {h2 :header t2 :tuples} (exec q2 outer-env)]
+    (if (= (vec h1) (vec h2))
+      (Table. nil h1 (vec ((set-ops set-op) (set t1) (set t2))))
+      (throw (Exception. "Invalid set operation")))))

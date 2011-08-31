@@ -26,33 +26,48 @@
 (defmulti java2cljmap
   "Convert java class hierarchy to clojure data structure"
   class)
+(defmethod java2cljmap SetQueryExp [e]
+  (let [setop (.getOption e)]
+    [:SET (cond (= setop SetQueryExp/EXCEPT) :EXCEPT
+                (= setop SetQueryExp/UNION) :UNION
+                (= setop SetQueryExp/INTERSECT) :INTERSECT)
+     (-> e .getQuery1 java2cljmap)
+     (-> e .getQuery2 java2cljmap)]))
 (defmethod java2cljmap QueryExp [e]
   (let [{:keys [select from] :as selfrom} (java2cljmap (.getSelectFrom e))
         {:keys [where group order] :as wgo}
         (java2cljmap (.getOptions e))]
-    (merge selfrom wgo)))
+    [:query (merge selfrom wgo)]))
 (defmethod java2cljmap SelectFromExp [e]
-  (let [targets (map-explist java2cljmap
-                             (.getTargetList e))
-        from (map-explist #(.getListName %)
-                          (.getFromList e))]
-    (into {} [[:select targets] [:from from]])))
+  (let [targets (map-explist java2cljmap (.getTargetList e))
+        from (map-explist java2cljmap (.getFromList e))]
+    {:select targets, :from from}))
 (defmethod java2cljmap ParameterTargetExp [e]
-  [(java2cljmap (.getParameter e))
-   (.getAlias e)])
+  (let [para (.getParameter e)]
+    (if (= (.getParameter para) ParameterExp/STAR)
+      :STAR
+      [(java2cljmap (.getParameter e))
+       (.getAlias e)])))
 (defmethod java2cljmap AggregationTargetExp [e]
-  [(java2cljmap (.getAggregationExp e))
+  [[:AGGR
+    (java2cljmap (.getAggregationExp e))]
    (.getAlias e)])
 (defmethod java2cljmap ExpressionTargetExp [e]
   [(java2cljmap (.getMathExp e))
    (.getAlias e)])
+(defmethod java2cljmap FromExp [e]
+  (let [table-name (.getListName e)
+        alias (.getAlias e)]
+    {:table table-name,
+     :query (-> e .getQuery java2cljmap),
+     :alias (if (nil? alias) table-name alias)}))
 (defmethod java2cljmap OptionalExp [e]
   (let [where (.getWhere e)
         group (.getGroup e)
         order (.getOrder e)]
     {:where (when where
               (map-explist #(map-explist java2cljmap %) (.getConditions where)))
-     :group (when group (java2cljmap group))
+     :groupby (when group (java2cljmap group))
      :order (when order (java2cljmap order))}))
 (defmethod java2cljmap ParameterCompareConditionExp [e]
   (vec (map java2cljmap [(.getCompareOp e)
@@ -62,17 +77,30 @@
   (conj (vec (map java2cljmap [(.getCompareOp e)
                              (.getOperand1 e)]))
         (java2cljmap  (.getConstant e))))
+(defmethod java2cljmap QueryCompareConditionExp [e]
+  (into [:QUERY]
+        (map #(java2cljmap %) [(.getCompareOp e)
+                               (.getParameter e)
+                               (.getAnyOrAll e)
+                               (.getQuery e)])))
 (defmethod java2cljmap RangeConditionExp [e]
-  (into [:RANGE
-         (if (.getIsNot e) not identity)]
-        (map java2cljmap [(.getParameter e)
-                        (.getDownLimit e)
-                        (.getUpLimit e)])))
+  (let [base [:RANGE (if (.getIsNot e) not identity)]]
+    (into (if (instance? e QueryRangeConditionExp)
+            (into [:QUERY] base)
+            base)
+          (map java2cljmap [(.getParameter e)
+                            (.getDownLimit e)
+                            (.getUpLimit e)]))))
 (defmethod java2cljmap ValueListInOrNotConditionExp [e]
   (conj [:IN
          (if (.getIsNot e) not identity)
          (java2cljmap (.getParameter e))]
         (set (map-explist java2cljmap (.getValues e)))))
+(defmethod java2cljmap QueryInOrNotConditionExp [e]
+  [:QUERY :IN
+   (if (.getIsNot e) not identity)
+   (-> e .getParameter java2cljmap)
+   (-> e .getQuery java2cljmap)])
 (defmethod java2cljmap LikeConditionExp [e]
   [:LIKE
    (if (.getIsNot e) not identity)
@@ -101,9 +129,6 @@
 (defmethod java2cljmap MatchPattern [e] (.getPattern e))
 (defmethod java2cljmap nil [e] nil)
 
-(defn transform
-  "Transform SQL clojure data structure
- representation to relational algebra"
-  [expr]
-  (let [{:keys [select from where group order]} (java2cljmap expr)]
-    [:projection select [:selection where [:product from]]]))
+(defn transform [expr]
+  (let [{:keys [select from where group order] :as query} (java2cljmap expr)]
+    query))

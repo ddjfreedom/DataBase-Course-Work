@@ -3,10 +3,10 @@
         [clojure.contrib.duck-streams :only [read-lines]]
         [clojure.contrib.seq-utils :only [positions]]))
 
-(defrecord Table [header tuples])
+(defrecord Table [name header tuples])
 
 (defn- get-tuples [name]
-  (loop [tuples (map #(split % #":") (read-lines name))
+  (loop [tuples (map #(split % #":") (read-lines (str "tables/" name)))
          res []]
     (if (seq tuples)
       (recur (rest tuples)
@@ -16,12 +16,16 @@
                         (first tuples))))
       res)))
 
-(defn create-table [name]
+(defmulti create-table (fn [table alias] (class table)))
+(defmethod create-table String [name alias]
   (let [full-tuples (get-tuples name)
         header (first full-tuples)]
-    (Table. (map (fn [attr] [name attr]) header)
+    (Table. name
+            (map (fn [attr] [alias attr]) header)
             (rest full-tuples))))
-
+(defmethod create-table disk.tablemanager.Table [table alias]
+  (assoc table :header
+         (map (fn [[t a]] [alias a]) (:header table))))
 (defn- attr-eq? [[table-name attr-name]
                  [header-table-name header-attr-name]]
   (and (or (nil? table-name)
@@ -31,8 +35,12 @@
 (defn attr? [v] (vector? v))
 
 (defn val-accessor
-  [val header]
+  [val header [outer-header outer-tuple]]
   (if (attr? val)
-    (let [column (first (positions #(attr-eq? val %) header))]
-      #(nth % column))
+    (if-let [column (first (positions #(attr-eq? val %) header))]
+      #(nth % column)
+      (if-let [column (first (positions #(attr-eq? val %)
+                                 outer-header))]
+        (fn [t] (nth outer-tuple column))
+        (throw (Exception. "Invalid Attribute specification"))))
     (fn [t] val)))
