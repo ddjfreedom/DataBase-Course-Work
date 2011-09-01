@@ -1,10 +1,10 @@
 package querymanager.exps;
 
 public class ElementDataType extends Exp {
-	DataType dateType;
+	DataType dataType;
 	int num;
 	public ElementDataType(DataType dataType, int num){
-		this.dateType = dataType;
+		this.dataType = dataType;
 		this.num = num;
 	}
 	@Override
@@ -12,5 +12,10 @@ public class ElementDataType extends Exp {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	public DataType getDataType() {
+		return dataType;
+	}
+	public int getNum() {
+		return num;
+	}
 }

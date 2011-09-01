@@ -9,8 +9,10 @@
             ParameterRangeConditionExp ParameterTargetExp QueryCompareConditionExp
             QueryExp QueryInOrNotConditionExp QueryRangeConditionExp QueryResult
             RangeConditionExp Result SelectFromExp SetQueryExp TargetExp
-            TargetExpList ValueListInOrNotConditionExp WhereExp Exp$DisOrAll
-            Exp$Aggregation Exp$MathOp Exp$CompareOp Exp$AnyOrAll Exp$AscOrDesc]))
+            TargetExpList ValueListInOrNotConditionExp WhereExp CreateExp
+            TableElementTypeExp ElementDataType Exp$DisOrAll
+            Exp$Aggregation Exp$MathOp Exp$CompareOp Exp$AnyOrAll Exp$AscOrDesc
+            Exp$DataType Exp$Restrict]))
 
 (defn- enum2keyword [e]
   (-> e .name keyword))
@@ -129,6 +131,16 @@
 (defmethod java2cljmap MatchPattern [e] (.getPattern e))
 (defmethod java2cljmap nil [e] nil)
 
+(defmethod java2cljmap CreateExp [e]
+  [:createtable (.getTableName e)
+   (map-explist java2cljmap (.getElements e))])
+(defmethod java2cljmap TableElementTypeExp [e]
+  {:attr (.getParameterName e),
+   :type (-> e .getElementType java2cljmap),
+   :restrict (-> e .getRestrict java2cljmap)})
+(defmethod java2cljmap ElementDataType [e]
+  [(-> e .getDataType java2cljmap)
+   (.getNum e)])
 (defn transform [expr]
   (let [{:keys [select from where group order] :as query} (java2cljmap expr)]
     query))
