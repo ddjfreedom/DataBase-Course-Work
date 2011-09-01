@@ -1,7 +1,8 @@
 (ns disk.tablemanager
   (:use [clojure.string :only [split]]
         [clojure.contrib.duck-streams :only [read-lines]]
-        [clojure.contrib.seq-utils :only [positions]])
+        [clojure.contrib.seq-utils :only [positions]]
+        [clojure.java.shell :only [sh]])
   (:import [java.io BufferedWriter FileWriter]))
 
 (defrecord Table [name header type constraint tuples])
@@ -93,3 +94,6 @@
 
 (defn insert [{:keys [tuples] :as table} attrs values]
   (write-table (assoc table :tuples (conj tuples values))))
+
+(defn drop-table [name]
+  (sh "rm" (str "tables/" name)))

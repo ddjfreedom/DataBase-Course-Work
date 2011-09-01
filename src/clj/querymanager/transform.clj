@@ -10,9 +10,9 @@
             QueryExp QueryInOrNotConditionExp QueryRangeConditionExp QueryResult
             RangeConditionExp Result SelectFromExp SetQueryExp TargetExp
             TargetExpList ValueListInOrNotConditionExp WhereExp CreateExp
-            TableElementTypeExp ElementDataType ConstantInsertExp Exp$DisOrAll
-            Exp$Aggregation Exp$MathOp Exp$CompareOp Exp$AnyOrAll Exp$AscOrDesc
-            Exp$DataType Exp$Restrict]))
+            TableElementTypeExp ElementDataType ConstantInsertExp DropExp
+            Exp$DisOrAll Exp$Aggregation Exp$MathOp Exp$CompareOp Exp$AnyOrAll
+            Exp$AscOrDesc Exp$DataType Exp$Restrict]))
 
 (defn- enum2keyword [e]
   (-> e .name keyword))
@@ -147,6 +147,9 @@
    (when-let [p-list (.getParameterList e)]
      (map-explist java2cljmap p-list))
    (map-explist java2cljmap (.getValues e))])
+
+(defmethod java2cljmap DropExp [e]
+  [:drop (.getListName e)])
 
 (defn transform [expr]
   (let [{:keys [select from where group order] :as query} (java2cljmap expr)]

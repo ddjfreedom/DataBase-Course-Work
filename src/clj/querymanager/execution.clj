@@ -1,7 +1,7 @@
 (ns querymanager.execution
   (:use [querymanager.transform :only [java2cljmap transform]]
         [disk.tablemanager :only [read-table attr? val-accessor
-                                  create-table insert]]
+                                  create-table insert drop-table]]
         [clojure.contrib.combinatorics :only [cartesian-product]]
         [clojure.contrib.seq-utils :only [separate positions]])
   (:require [clojure.string :only [replace]]
@@ -256,3 +256,6 @@ Ohterwise, throw an exception"
     (if (valid-insertion? table attrs values)
       (insert table attrs values)
       (throw (Exception. "Invalid Insertion")))))
+
+(defmethod exec :drop [[_ name] _]
+  (drop-table name))

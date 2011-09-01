@@ -12,5 +12,8 @@ public class DropExp extends Exp {
 	Result execute() {
 		return null;
 	}
-
+	public String getListName() {
+		return listName;
+	}
+	
 }
