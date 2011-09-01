@@ -6,4 +6,7 @@ public class ConstantInsertExp extends InsertExp {
 		super(listName, parameterList);
 		this.values = values;
 	}
+	public ConstantList getValues() {
+		return values;
+	}
 }

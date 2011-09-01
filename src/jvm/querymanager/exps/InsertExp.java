@@ -15,4 +15,11 @@ public class InsertExp extends Exp {
 		return null;
 	}
 
+	public String getListName() {
+		return listName;
+	}
+
+	public ParameterExpList getParameterList() {
+		return parameterList;
+	}
 }

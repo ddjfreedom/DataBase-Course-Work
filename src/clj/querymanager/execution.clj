@@ -1,8 +1,9 @@
 (ns querymanager.execution
   (:use [querymanager.transform :only [java2cljmap transform]]
-        [disk.tablemanager :only [read-table attr? val-accessor create-table]]
+        [disk.tablemanager :only [read-table attr? val-accessor
+                                  create-table insert]]
         [clojure.contrib.combinatorics :only [cartesian-product]]
-        [clojure.contrib.seq-utils :only [separate]])
+        [clojure.contrib.seq-utils :only [separate positions]])
   (:require [clojure.string :only [replace]]
             [clojure.set :only [difference intersection union]])
   (:import [querymanager.lexical Yylex]
@@ -20,17 +21,13 @@
           (println (.value tok) " " (.sym tok))
           (recur (.next_token lex)))))))
 
-(defn parse
-  ([file-name sel]
-     (with-open [fis (FileInputStream. file-name)]
-       (let [parse-tree (-> fis
-                            Yylex.
-                            DBParser.
-                            .parse)]
-         (if sel
-           (java2cljmap (.value parse-tree))
-           (transform (.value parse-tree))))))
-  ([file-name] (parse file-name nil)))
+(defn parse [file-name]
+  (with-open [fis (FileInputStream. file-name)]
+    (let [parse-tree (-> fis
+                         Yylex.
+                         DBParser.
+                         .parse)]
+      (java2cljmap (.value parse-tree)))))
 
 (defn table-product [tables]
   (let [[headers types] (map #(map % tables) [:header :type])
@@ -222,3 +219,40 @@ Ohterwise, throw an exception"
 
 (defmethod exec :createtable [[_ name attrs] _]
   (create-table name attrs))
+
+(defn- valid-type? [[type num] value]
+  (cond (or (= type :CHAR) (= type :VARCHAR)) (<= (count value) num)
+        (= type :SMALLINT) (and (< value 32767) (> value -32768))
+        (= type :INT) (and (< value (dec (bit-shift-left 1 31)))
+                           (> value (- (bit-shift-left 1 31))))
+        :else true))
+(defn- valid-insertion? [{:keys [header type constraint tuples]} attrs values]
+  (let [header (map second header)
+        attr-col (fn [attr]
+                   (first (positions #(= attr %) header)))
+        valid-key? (cond (constraint :PRIMARYKEY)
+                         (fn [v vs] (and (not (nil? v))
+                                         (every? #(not= v %) vs)))
+                         (constraint :UNIQUE)
+                         (fn [v vs] (every? #(not= v %) vs)))
+        keycons (or (constraint :PRIMARYKEY) (constraint :UNIQUE))]
+    (when (or (= (count attrs) (count values))
+              (= (count header) (count values)))
+      (loop [attrs (if (nil? attrs) header attrs) values values]
+        (let [[a & as] attrs
+              [v & vs] values
+              col (attr-col a)]
+          (cond (nil? attrs)
+                true
+                (and (valid-type? (nth type col) v)
+                     (if (= a keycons)
+                       (valid-key? v (map #(nth % col) tuples))
+                       true))
+                (recur as vs)
+                :else nil))))))
+
+(defmethod exec :insert [[_ name attrs values] _]
+  (let [table (read-table name name)]
+    (if (valid-insertion? table attrs values)
+      (insert table attrs values)
+      (throw (Exception. "Invalid Insertion")))))

@@ -13,5 +13,10 @@ public class ParameterExpList extends Exp {
 		// TODO Auto-generated method stub
 		return null;
 	}
-
+	public ParameterExp getHead() {
+		return head;
+	}
+	public ParameterExpList getTail() {
+		return tail;
+	}
 }

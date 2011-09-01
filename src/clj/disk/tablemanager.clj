@@ -23,7 +23,8 @@
         [header types keycons] (reduce (fn [[ns ts ks] p]
                                          (let [[name t num k] (split p #",")]
                                            [(conj ns name)
-                                            (conj ts [t num])
+                                            (conj ts [(keyword t)
+                                                      (Integer/parseInt num)])
                                             (if (nil? k)
                                               ks
                                               (assoc ks (keyword k) name))]))
@@ -44,6 +45,9 @@
            (= table-name header-table-name))
        (= attr-name header-attr-name)))
 
+(defn-  cons-str-with-sep [sep coll]
+  (apply str (interpose sep coll)))
+
 (defn create-table [name attrs]
   (let [[attr-names types constraints] (map #(map % attrs)
                                             [:attr :type :restrict])
@@ -53,11 +57,11 @@
                                   (str "," (.getName c))
                                   "")))
                          attr-names types constraints)
-        cons-str-with-sep #(apply str (interpose %2 %1))]
-    (with-open [wtr (BufferedWriter. (FileWriter. name))]
+       ]
+    (with-open [wtr (BufferedWriter. (FileWriter. (str "tables/" name)))]
       (.write wtr
               (with-out-str
-                (println (cons-str-with-sep properties ":")))))))
+                (println (cons-str-with-sep ":" properties)))))))
 
 (defn attr? [v] (vector? v))
 
@@ -71,3 +75,21 @@
         (fn [t] (nth outer-tuple column))
         (throw (Exception. "Invalid Attribute specification"))))
     (fn [t] val)))
+
+(defn write-table [{:keys [name header type constraint tuples]}]
+  (let [constraint (into {} (map (fn [[k v]] [v k]) constraint))
+        properties (map (fn [[_ attr] [t num]]
+                          (str attr "," (.getName t) "," num
+                               (if-let [c (constraint attr)]
+                                 (str "," (.getName c))
+                                 "")))
+                        header type)]
+    (with-open [wtr (BufferedWriter. (FileWriter. (str "tables/" name)))]
+      (.write wtr
+              (with-out-str
+                (println (cons-str-with-sep ":" properties))
+                (doseq [t tuples]
+                  (println (cons-str-with-sep ":" t))))))))
+
+(defn insert [{:keys [tuples] :as table} attrs values]
+  (write-table (assoc table :tuples (conj tuples values))))
