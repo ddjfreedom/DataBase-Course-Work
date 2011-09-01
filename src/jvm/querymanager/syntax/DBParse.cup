@@ -93,6 +93,16 @@ instruction ::= queryExp:q {:RESULT = q;:}
 				| dropIndexExp:d {:RESULT = d;:}
 				| createViewExp:c {:RESULT = c;:}
 				| dropViewExp:d {:RESULT = d;:}
+        | queryExp:q SEMICOLON {:RESULT = q;:}
+				| updateExp:u SEMICOLON {:RESULT = u;:}
+				| createExp:c SEMICOLON {:RESULT = c;:}
+				| insertExp:i SEMICOLON {:RESULT = i;:}
+				| deleteExp:d SEMICOLON {:RESULT = d;:}
+				| dropExp:d SEMICOLON {:RESULT = d;:}
+				| createIndexExp:c SEMICOLON {:RESULT = c;:}
+				| dropIndexExp:d SEMICOLON {:RESULT = d;:}
+				| createViewExp:c SEMICOLON {:RESULT = c;:}
+				| dropViewExp:d SEMICOLON {:RESULT = d;:}
 				;
 
 queryExp ::= selFrom:sf optionalList:op {:RESULT = new QueryExp(sf, op);:}
