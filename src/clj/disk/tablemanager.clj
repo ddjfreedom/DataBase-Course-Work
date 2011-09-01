@@ -3,20 +3,17 @@
         [clojure.contrib.duck-streams :only [read-lines]]
         [clojure.contrib.seq-utils :only [positions]]
         [clojure.java.shell :only [sh]])
-  (:import [java.io BufferedWriter FileWriter]))
+  (:import [java.io BufferedWriter FileWriter]
+           [java.util ArrayList]
+           [disk RecordTable]))
 
 (defrecord Table [name header type constraint tuples])
 
 (defn- get-tuples [name]
-  (loop [tuples (map #(split % #":") (read-lines (str "tables/" name)))
-         res []]
-    (if (seq tuples)
-      (recur (rest tuples)
-             (conj res
-                   (map #(try (Integer/parseInt %)
-                              (catch NumberFormatException e %))
-                        (first tuples))))
-      res)))
+  (let [record (doto (RecordTable. name)
+                 (.readFromDisk))]
+    (into [(split (.getMetaData record) #":")]
+          (map #(split % #":") (vec (.getRecords record))))))
 
 (defmulti read-table (fn [table alias] (class table)))
 (defmethod read-table String [name alias]
@@ -29,7 +26,7 @@
                                             (if (nil? k)
                                               ks
                                               (assoc ks (keyword k) name))]))
-                                       [[]  [] {}]
+                                       [[] [] {}]
                                        (first full-tuples))]
     (Table. name
             (map (fn [attr] [alias attr]) header)
@@ -58,11 +55,9 @@
                                   (str "," (.getName c))
                                   "")))
                          attr-names types constraints)
-       ]
-    (with-open [wtr (BufferedWriter. (FileWriter. (str "tables/" name)))]
-      (.write wtr
-              (with-out-str
-                (println (cons-str-with-sep ":" properties)))))))
+        record (doto (RecordTable. name)
+                 (.setMetaData (cons-str-with-sep ":" properties)))]
+    (.writeToDisk record)))
 
 (defn attr? [v] (vector? v))
 
@@ -84,16 +79,15 @@
                                (if-let [c (constraint attr)]
                                  (str "," (.getName c))
                                  "")))
-                        header type)]
-    (with-open [wtr (BufferedWriter. (FileWriter. (str "tables/" name)))]
-      (.write wtr
-              (with-out-str
-                (println (cons-str-with-sep ":" properties))
-                (doseq [t tuples]
-                  (println (cons-str-with-sep ":" t))))))))
+                        header type)
+        record (doto (RecordTable. name)
+                 (.setMetaData (cons-str-with-sep ":" properties))
+                 (.setRecords (ArrayList. (vec (map #(cons-str-with-sep ":" %)
+                                                    tuples)))))]
+    (.writeToDisk record)))
 
 (defn insert [{:keys [tuples] :as table} attrs values]
   (write-table (assoc table :tuples (conj tuples values))))
 
 (defn drop-table [name]
-  (sh "rm" (str "tables/" name)))
+  (.deleteTable (RecordTable. name)))

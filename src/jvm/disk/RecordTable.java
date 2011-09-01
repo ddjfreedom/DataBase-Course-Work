@@ -73,10 +73,13 @@ public class RecordTable {
 		StringBuffer file = new StringBuffer(metaData);
 		disk.createFile(tableName);
 		disk.openFile(tableName);
-		for(String record : records){
-			file.append("%s%");
-			file.append(record);
-		}
+    if (records != null) {
+      System.out.println(records);
+		  for(String record : records){
+		  	file.append("%s%");
+		  	file.append(record);
+		  }
+    }
 		file.append("%end%");
 		disk.writeFile(tableName, file);
 	}
@@ -93,7 +96,7 @@ public class RecordTable {
 		int size = filePart.length;
 		setMetaData(filePart[0]);
 		List<String> records = new ArrayList<String>();
-		for(int i = 2; i < size; ++i){
+		for(int i = 1; i < size; ++i){
 			records.add(filePart[i]);
 		}
 		setRecords(records);
