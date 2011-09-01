@@ -15,6 +15,13 @@
     (into [(split (.getMetaData record) #":")]
           (map #(split % #":") (vec (.getRecords record))))))
 
+(defn- type-cast [types tuples]
+  (map #(map (fn [[t _] v]
+               (cond (or (= t :INT) (= t :SMALLINT)) (Integer/parseInt v)
+                     (or (= t :REAL) (= t :FLOAT)) (Double/parseDouble v)
+                     :else v))
+             types %)
+       tuples))
 (defmulti read-table (fn [table alias] (class table)))
 (defmethod read-table String [name alias]
   (let [full-tuples (get-tuples name)
@@ -32,7 +39,7 @@
             (map (fn [attr] [alias attr]) header)
             types
             keycons
-            (rest full-tuples))))
+            (type-cast types (rest full-tuples)))))
 (defmethod read-table disk.tablemanager.Table [table alias]
   (assoc table :header
          (map (fn [[t a]] [alias a]) (:header table))))
