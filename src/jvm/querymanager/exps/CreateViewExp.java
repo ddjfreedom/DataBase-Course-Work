@@ -16,5 +16,10 @@ public class CreateViewExp extends Exp {
 	Result execute() {
 		return null;
 	}
-
+	public String getViewName() {
+		return viewName;
+	}
+	public QueryExp getQuery() {
+		return query;
+	}
 }

@@ -1,7 +1,8 @@
 (ns querymanager.execution
-  (:use [querymanager.transform :only [java2cljmap transform]]
+  (:use [querymanager.transform :only [java2cljmap]]
         [disk.tablemanager :only [read-table attr? val-accessor
-                                  create-table insert drop-table]]
+                                  create-table insert drop-table
+                                  create-view drop-view]]
         [clojure.contrib.combinatorics :only [cartesian-product]]
         [clojure.contrib.seq-utils :only [separate positions]])
   (:require [clojure.string :only [replace]]
@@ -173,7 +174,10 @@ Ohterwise, throw an exception"
         (apply map (fn [t]
                      (cond (instance? Table t) t
                            (t :table)
-                           (read-table (t :table) (t :alias))
+                           (let [tmp (read-table (t :table) (t :alias))]
+                             (if (= (first tmp) :query)
+                               (read-table (exec tmp outer-env) (t :alias))
+                               tmp))
                            (t :query)
                            (read-table (exec (t :query) outer-env)
                                          (t :alias))))
@@ -259,3 +263,9 @@ Ohterwise, throw an exception"
 
 (defmethod exec :drop [[_ name] _]
   (drop-table name))
+
+(defmethod exec :createview [[_ name query] _]
+  (create-view name query))
+
+(defmethod exec :dropview [[_ name] _]
+  (drop-view name))

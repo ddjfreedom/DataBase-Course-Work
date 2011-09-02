@@ -12,5 +12,7 @@ public class DropViewExp extends Exp {
 	Result execute() {
 		return null;
 	}
-
+	public String getViewName() {
+		return viewName;
+	}
 }

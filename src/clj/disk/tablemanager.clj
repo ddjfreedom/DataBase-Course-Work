@@ -9,6 +9,8 @@
 
 (defrecord Table [name header type constraint tuples])
 
+(def cache (atom {}))
+
 (defn- get-tuples [name]
   (let [record (doto (RecordTable. name)
                  (.readFromDisk))]
@@ -24,22 +26,26 @@
        tuples))
 (defmulti read-table (fn [table alias] (class table)))
 (defmethod read-table String [name alias]
-  (let [full-tuples (get-tuples name)
-        [header types keycons] (reduce (fn [[ns ts ks] p]
-                                         (let [[name t num k] (split p #",")]
-                                           [(conj ns name)
-                                            (conj ts [(keyword t)
-                                                      (Integer/parseInt num)])
-                                            (if (nil? k)
-                                              ks
-                                              (assoc ks (keyword k) name))]))
-                                       [[] [] {}]
-                                       (first full-tuples))]
-    (Table. name
-            (map (fn [attr] [alias attr]) header)
-            types
-            keycons
-            (type-cast types (rest full-tuples)))))
+  (if (@cache name)
+    (@cache name)
+    (let [full-tuples (get-tuples name)
+          [header types keycons] (reduce (fn [[ns ts ks] p]
+                                           (let [[name t num k] (split p #",")]
+                                             [(conj ns name)
+                                              (conj ts [(keyword t)
+                                                        (Integer/parseInt num)])
+                                              (if (nil? k)
+                                                ks
+                                                (assoc ks (keyword k) name))]))
+                                         [[] [] {}]
+                                         (first full-tuples))]
+      ((swap! cache assoc name
+              (Table. name
+                      (map (fn [attr] [alias attr]) header)
+                      types
+                      keycons
+                      (type-cast types (rest full-tuples))))
+       name))))
 (defmethod read-table disk.tablemanager.Table [table alias]
   (assoc table :header
          (map (fn [[t a]] [alias a]) (:header table))))
@@ -93,8 +99,14 @@
                                                     tuples)))))]
     (.writeToDisk record)))
 
-(defn insert [{:keys [tuples] :as table} attrs values]
-  (write-table (assoc table :tuples (conj tuples values))))
+(defn insert [{:keys [name tuples] :as table} attrs values]
+  (let [new-table (assoc table :tuples (conj tuples values))]
+    (write-table ((swap! cache assoc name new-table) name))))
 
 (defn drop-table [name]
   (.deleteTable (RecordTable. name)))
+
+(defn create-view [name query]
+  (swap! cache assoc name query))
+(defn drop-view [name]
+  (swap! cache dissoc name))

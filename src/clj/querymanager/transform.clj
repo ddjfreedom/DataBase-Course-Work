@@ -11,8 +11,8 @@
             RangeConditionExp Result SelectFromExp SetQueryExp TargetExp
             TargetExpList ValueListInOrNotConditionExp WhereExp CreateExp
             TableElementTypeExp ElementDataType ConstantInsertExp DropExp
-            Exp$DisOrAll Exp$Aggregation Exp$MathOp Exp$CompareOp Exp$AnyOrAll
-            Exp$AscOrDesc Exp$DataType Exp$Restrict]))
+            CreateViewExp DropViewExp Exp$DisOrAll Exp$Aggregation Exp$MathOp
+            Exp$CompareOp Exp$AnyOrAll Exp$AscOrDesc Exp$DataType Exp$Restrict]))
 
 (defn- enum2keyword [e]
   (-> e .name keyword))
@@ -151,6 +151,10 @@
 (defmethod java2cljmap DropExp [e]
   [:drop (.getListName e)])
 
-(defn transform [expr]
-  (let [{:keys [select from where group order] :as query} (java2cljmap expr)]
-    query))
+(defmethod java2cljmap CreateViewExp [e]
+  [:createview (.getViewName e)
+   (-> e .getQuery java2cljmap)])
+
+(defmethod java2cljmap DropViewExp [e]
+  [:dropview (.getViewName e)])
+
