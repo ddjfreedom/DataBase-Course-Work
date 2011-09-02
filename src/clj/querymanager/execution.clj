@@ -8,7 +8,7 @@
             [clojure.set :only [difference intersection union]])
   (:import [querymanager.lexical Yylex]
            [querymanager.syntax DBParser sym]
-           [java.io FileInputStream]
+           [java.io FileInputStream StringReader]
            [java_cup.runtime Symbol]
            [java.util.regex Pattern]
            [disk.tablemanager Table]))
@@ -21,13 +21,13 @@
           (println (.value tok) " " (.sym tok))
           (recur (.next_token lex)))))))
 
-(defn parse [file-name]
-  (with-open [fis (FileInputStream. file-name)]
-    (let [parse-tree (-> fis
-                         Yylex.
-                         DBParser.
-                         .parse)]
-      (java2cljmap (.value parse-tree)))))
+(defn parse [expr]
+  (let [parse-tree (-> expr
+                       StringReader.
+                       Yylex.
+                       DBParser.
+                       .parse)]
+    (java2cljmap (.value parse-tree))))
 
 (defn table-product [tables]
   (let [[headers types] (map #(map % tables) [:header :type])

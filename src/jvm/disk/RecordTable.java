@@ -74,7 +74,6 @@ public class RecordTable {
 		disk.createFile(tableName);
 		disk.openFile(tableName);
     if (records != null) {
-      System.out.println(records);
 		  for(String record : records){
 		  	file.append("%s%");
 		  	file.append(record);
